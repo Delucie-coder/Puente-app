@@ -1,131 +1,136 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f9fafb;
-  margin: 0;
-  color: #222;
+:root{
+  --bg:#fbfdff;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --accent:#2563eb;
+  --accent-2:#0ea5a4;
+  --glass: rgba(255,255,255,0.6);
 }
 
-/* Header */
-.header {
-  background: white;
-  padding: 1rem 2rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  background: linear-gradient(180deg,var(--bg),#f6fbfb 60%);
+  color:#0f172a;
+  -webkit-font-smoothing:antialiased;
 }
 
-.header h1 {
-  margin: 0;
-  color: #2563eb;
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:1rem 2rem;
+}
+.brand .logo{
+  font-family:'Playfair Display', serif;
+  font-size:1.25rem;
+  color:var(--accent);
+  letter-spacing:0.4px;
+}
+.brand .tag{
+  display:block;
+  font-size:0.75rem;
+  color:var(--muted);
+}
+.nav .link{margin-left:1rem;color:var(--muted);text-decoration:none}
+
+.hero{
+  display:grid;
+  grid-template-columns: 1fr 420px;
+  gap:2.5rem;
+  align-items:center;
+  padding:2.5rem;
+  max-width:1200px;
+  margin:0 auto;
 }
 
-.user-controls {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
+.hero-left{padding-right:1rem}
+.hero-title{
+  font-family:'Playfair Display', serif;
+  font-size:2.25rem;
+  line-height:1.05;
+  margin:0 0 0.75rem 0;
+  color:#0f172a;
+}
+.hero-sub{color:var(--muted);font-size:1.05rem;margin:0 0 1.5rem 0;max-width:52ch}
+
+.collage{position:relative;height:320px;margin-top:1.25rem}
+.collage .photo{position:absolute;border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,0.12);object-fit:cover}
+.collage .p1{left:0;top:40px;width:54%;transform:rotate(-6deg);clip-path:polygon(0 0,100% 10%,100% 100%,0 100%)}
+.collage .p2{right:6%;top:0;width:44%;transform:rotate(8deg);clip-path:polygon(10% 0,100% 0,90% 100%,0 100%)}
+.collage .p3{left:6%;bottom:0;width:34%;transform:rotate(4deg);clip-path:circle(50% at 50% 50%)}
+.collage .scribble{position:absolute;left:-4%;bottom:-12px;width:110%;height:70px;pointer-events:none}
+
+.signup-card{
+  background:linear-gradient(180deg,var(--card), #f8fbff);
+  border-radius:14px;
+  padding:2rem;
+  box-shadow:0 12px 30px rgba(2,6,23,0.08);
+  border:1px solid rgba(37,99,235,0.06);
+}
+.signup-card h2{margin:0 0 1rem 0;font-size:1.2rem;color:#08203a}
+.ctas{display:flex;flex-direction:column;gap:0.8rem;margin-top:0.5rem}
+.cta{
+  display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1rem;border-radius:10px;border:1px solid rgba(37,99,235,0.12);background:linear-gradient(180deg, rgba(37,99,235,0.04), rgba(255,255,255,0));cursor:pointer;font-weight:600;color:var(--accent);
+  transition:transform .16s ease, box-shadow .16s ease;
+}
+.cta:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(37,99,235,0.08)}
+.cta .arrow{font-size:1.2rem;color:var(--accent)}
+.help{color:var(--muted);font-size:0.9rem;margin-top:1rem}
+.help a{color:var(--accent-2);text-decoration:underline}
+
+.site-footer{padding:2rem;text-align:center;color:var(--muted);font-size:0.85rem}
+
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr 1fr;padding:1.5rem}
+  .collage{height:260px}
 }
 
-/* Layout */
-.container {
-  display: grid;
-  grid-template-columns: 250px 1fr;
-  gap: 1rem;
-  padding: 1rem 2rem;
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr;padding:1rem;gap:1rem}
+  .signup-card{order:2}
+  .hero-left{order:1}
 }
 
-.sidebar {
-  background: white;
-  padding: 1rem;
-  border-radius: 8px;
+/* Toast used by login.js */
+.puente-toast{
+  position:fixed;
+  left:50%;
+  bottom:28px;
+  transform:translateX(-50%) translateY(10px);
+  background:rgba(2,6,23,0.92);
+  color:#fff;
+  padding:0.7rem 1rem;
+  border-radius:10px;
+  font-size:0.95rem;
+  opacity:0;transition:opacity .22s ease, transform .22s ease;
+  z-index:9999;pointer-events:none
 }
+.puente-toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
 
-.sidebar input, .sidebar select, button {
-  width: 100%;
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+/* Login form styles */
+.login-card .field{display:block;margin-bottom:0.9rem}
+.login-card .label{display:block;font-size:0.82rem;color:var(--muted);margin-bottom:0.35rem}
+.login-card input[type="email"], .login-card input[type="password"]{
+  width:100%;padding:0.7rem;border-radius:8px;border:1px solid #e6eefb;background:rgba(255,255,255,0.9);
 }
+.pw-row{display:flex;gap:0.5rem;align-items:center}
+.pw-toggle{background:transparent;border:none;padding:0.3rem 0.5rem;cursor:pointer;border-radius:6px}
+.form-row{display:flex;justify-content:space-between;align-items:center;margin-top:0.25rem}
+.remember{font-size:0.9rem;color:var(--muted)}
+.link-btn{background:none;border:none;color:var(--accent-2);text-decoration:underline;cursor:pointer}
+.signin{margin-top:1rem;width:100%;padding:0.9rem;border-radius:10px;border:none;background:var(--accent);color:white;font-weight:700;cursor:pointer}
+.signin:hover{background:#1e4ed8}
 
-button {
-  background: #2563eb;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
+/* Modal overrides (reuse earlier modal styles) */
+.modal{position:fixed;inset:0;background:rgba(2,6,23,0.36);display:flex;align-items:center;justify-content:center;z-index:1200}
+.modal .modal-content{background:var(--card);padding:1.25rem;border-radius:10px;max-width:480px;width:92%;box-shadow:0 12px 30px rgba(2,6,23,0.08)}
+.modal.hidden{display:none}
 
-button:hover {
-  background: #1e4ed8;
-}
+/* Small tweaks for the SVG scene */
+.rwanda-scene{width:100%;height:320px;border-radius:12px;overflow:visible;display:block}
 
-/* Resources */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-
-.card img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-}
-
-.card-body {
-  padding: 0.8rem;
-}
-
-.card h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.card p {
-  font-size: 0.85rem;
-  color: #555;
-}
-
-/* Modal */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 10px;
-  padding: 1rem;
-  width: 90%;
-  max-width: 500px;
-}
-
-.hidden {
-  display: none;
-}
-
-/* Footer */
-.footer {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #666;
-  padding: 1rem;
-}
-
-@media (max-width: 768px) {
-  .container {
-    grid-template-columns: 1fr;
-  }
+@media (max-width:720px){
+  .rwanda-scene{height:220px}
 }
