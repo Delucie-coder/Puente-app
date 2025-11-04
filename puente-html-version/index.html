@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puente – Education Resource Hub</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>Puente</h1>
+    <p>Bridging the digital divide in education</p>
+    <div class="user-controls">
+      <input type="text" id="username" placeholder="Enter name or phone">
+      <button id="signinBtn">Sign in</button>
+      <label><input type="checkbox" id="lowBandwidth"> Low Bandwidth</label>
+    </div>
+  </header>
+
+  <main class="container">
+    <aside class="sidebar">
+      <h2>Search & Filters</h2>
+      <input type="text" id="searchInput" placeholder="Search resources">
+
+      <select id="levelFilter">
+        <option value="Any">Any Level</option>
+        <option value="Primary">Primary</option>
+        <option value="Secondary">Secondary</option>
+        <option value="Tertiary">Tertiary</option>
+      </select>
+
+      <select id="subjectFilter">
+        <option value="Any">Any Subject</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="Biology">Biology</option>
+        <option value="Languages">Languages</option>
+        <option value="Computer Science">Computer Science</option>
+      </select>
+
+      <select id="languageFilter">
+        <option value="Any">Any Language</option>
+        <option value="English">English</option>
+        <option value="Kinyarwanda">Kinyarwanda</option>
+        <option value="French">French</option>
+      </select>
+
+      <button id="uploadBtn">Upload Resource</button>
+
+      <div id="bookmarkList"></div>
+    </aside>
+
+    <section class="content">
+      <h2>Resources</h2>
+      <div id="resourceList" class="grid"></div>
+    </section>
+  </main>
+
+  <div id="modal" class="modal hidden"></div>
+
+  <footer class="footer">
+    Puente — Prototype · Accessible · Low-bandwidth conscious
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
