@@ -1,0 +1,32 @@
+{
+  "lessons": [
+    {
+      "id": "lang1",
+      "title": "Market English: Greetings & Selling Phrases",
+      "language": "English",
+      "summary": "Short phrases for greeting customers, asking prices, and simple negotiations.",
+      "weeks": []
+    },
+    {
+      "id": "lang2",
+      "title": "Vendor French: Basic Phrases",
+      "language": "French",
+      "summary": "Common French phrases to help vendors speak with French-speaking customers.",
+      "weeks": []
+    },
+    {
+      "id": "lang3",
+      "title": "Moto English: Directions & Safety",
+      "language": "English",
+      "summary": "Essential English words and sentences for moto drivers—giving directions, safety words, and fares.",
+      "weeks": []
+    },
+    {
+      "id": "lang4",
+      "title": "Moto French: Directions & Customer Phrases",
+      "language": "French",
+      "summary": "French phrases and short roleplays for moto drivers to give directions, ask fares, and interact with French-speaking customers.",
+      "weeks": []
+    }
+  ]
+}

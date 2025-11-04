@@ -32,6 +32,53 @@ const resources = [
     size: "3 MB",
     url: "#"
   }
+  ,
+  // New language lessons tailored to motorcyclists and street vendors
+  {
+    id: "lang1",
+    title: "Market English: Greetings & Selling Phrases",
+    subject: "Languages",
+    level: "Basic",
+    language: "English",
+    summary: "Short phrases for greeting customers, asking prices, and simple negotiations.",
+    thumbnail: "https://picsum.photos/seed/marketeng/400/240",
+    size: "600 KB",
+    url: "#"
+  },
+  {
+    id: "lang2",
+    title: "Vendor French: Basic Phrases",
+    subject: "Languages",
+    level: "Basic",
+    language: "French",
+    summary: "Common French phrases to help vendors speak with French-speaking customers.",
+    thumbnail: "https://picsum.photos/seed/vendorfr/400/240",
+    size: "620 KB",
+    url: "#"
+  },
+  {
+    id: "lang3",
+    title: "Moto English: Directions & Safety",
+    subject: "Languages",
+    level: "Basic",
+    language: "English",
+    summary: "Essential English words and sentences for moto drivers—giving directions, safety words, and fares.",
+    thumbnail: "https://picsum.photos/seed/motoeng/400/240",
+    size: "540 KB",
+    url: "#"
+  }
+  ,
+  {
+    id: "lang4",
+    title: "Moto French: Directions & Customer Phrases",
+    subject: "Languages",
+    level: "Basic",
+    language: "French",
+    summary: "French phrases and short roleplays for moto drivers to give directions, ask fares, and interact with French-speaking customers.",
+    thumbnail: "https://picsum.photos/seed/motofr/400/240",
+    size: "580 KB",
+    url: "#"
+  }
 ];
 
 const list = document.getElementById("resourceList");

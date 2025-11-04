@@ -25,57 +25,17 @@
   <main class="hero">
     <section class="hero-left">
       <h1 class="hero-title">Puente helps learners thrive</h1>
-      <p class="hero-sub">Learn with tailored resources, practice problems, and tools built for low-bandwidth environments — designed for communities and schools.</p>
+  <p class="hero-sub">Learn English and French basics tailored for Rwandan motorcyclists (moto drivers) and local street vendors — short lessons and phrases to help you communicate with customers who don't speak Kinyarwanda.</p>
 
       <div class="collage" aria-hidden="false">
-        <!-- Inline illustrative SVG representing Rwandan motorcyclists and local street vendors holding a book. Stylized and abstract to avoid using photos of identifiable people. -->
-        <svg class="rwanda-scene" viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration of local motorcyclists and street vendors in Rwanda learning together">
-          <defs>
-            <linearGradient id="g1" x1="0" x2="1">
-              <stop offset="0" stop-color="#e6f9f7" />
-              <stop offset="1" stop-color="#f0f7ff" />
-            </linearGradient>
-          </defs>
-
-          <!-- Background hill / abstract landscape -->
-          <rect width="100%" height="100%" fill="url(#g1)" rx="18"/>
-
-          <!-- Road -->
-          <path d="M0 330 C150 300, 350 300, 900 320 L900 420 L0 420 Z" fill="#dff3ef"/>
-
-          <!-- Motorcyclist (stylized) -->
-          <g transform="translate(140,200) scale(1.0)">
-            <circle cx="60" cy="80" r="28" fill="#f59e0b" opacity="0.95"/>
-            <rect x="30" y="90" width="100" height="12" rx="6" fill="#0f172a" opacity="0.12"/>
-            <circle cx="20" cy="120" r="22" fill="#0b78a6"/>
-            <circle cx="120" cy="120" r="22" fill="#0b78a6"/>
-            <rect x="48" y="50" width="56" height="36" rx="8" fill="#fff"/>
-            <!-- book held by passenger -->
-            <rect x="58" y="58" width="24" height="18" rx="2" fill="#fff8cc" stroke="#f59e0b" stroke-width="1"/>
-          </g>
-
-          <!-- Vendor stand with person holding a book -->
-          <g transform="translate(420,140) scale(1.0)">
-            <rect x="0" y="80" width="160" height="80" rx="8" fill="#fff" stroke="#e6eefb"/>
-            <rect x="8" y="88" width="56" height="56" rx="8" fill="#ffedd5"/>
-            <!-- person -->
-            <circle cx="120" cy="72" r="22" fill="#ef4444"/>
-            <rect x="96" y="92" width="48" height="36" rx="6" fill="#fff"/>
-            <!-- book -->
-            <rect x="104" y="100" width="28" height="18" rx="2" fill="#dbeafe" stroke="#2563eb"/>
-          </g>
-
-          <!-- Small group learning (stylized figures) -->
-          <g transform="translate(640,200)">
-            <circle cx="28" cy="40" r="16" fill="#34d399"/>
-            <rect x="10" y="56" width="36" height="16" rx="6" fill="#fff"/>
-            <circle cx="86" cy="48" r="16" fill="#60a5fa"/>
-            <rect x="68" y="64" width="36" height="16" rx="6" fill="#fff"/>
-          </g>
-
-          <!-- decorative scribble -->
-          <path d="M40 260 C160 220, 360 220, 540 260" stroke="#0ea5a4" stroke-width="6" fill="none" opacity="0.12" stroke-linecap="round"/>
-        </svg>
+          <!-- Your local image (found in `Images/` folder) -->
+          <img src="Images/loginpic.png" alt="Local motorcyclists and vendors" class="hero-photo" loading="lazy">
+      </div>
+      <!-- Quick access box for Moto French -->
+      <div class="quick-box" role="region" aria-label="Moto French quick start">
+        <h3>Moto French — quick start</h3>
+        <p style="margin:0 0 .6rem 0;color:var(--muted)">Short phrases for moto drivers: give directions, ask for fares, and greet French-speaking customers.</p>
+        <a class="signin" href="lesson.html?id=lang4">Start Moto French</a>
       </div>
     </section>
 

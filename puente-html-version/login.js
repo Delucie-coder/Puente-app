@@ -24,8 +24,27 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Please fill in email and password');
       return;
     }
-    // Demo behavior: show success toast
-    showToast('Signed in as ' + email);
+    // Attempt to authenticate with mock API; fallback to client-side demo if unavailable
+    fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    }).then(r => {
+      if (!r.ok) throw new Error('Network');
+      return r.json();
+    }).then(data => {
+      const user = data.user || { email };
+      sessionStorage.setItem('puente_user', JSON.stringify(user));
+      sessionStorage.setItem('puente_token', data.token || 'demo');
+      showToast('Signed in as ' + email);
+      setTimeout(() => window.location.href = 'dashboard.html', 700);
+    }).catch(() => {
+      // Fallback: local demo
+      const user = { email };
+      try { sessionStorage.setItem('puente_user', JSON.stringify(user)); } catch (err){}
+      showToast('Signed in (offline demo) as ' + email);
+      setTimeout(() => window.location.href = 'dashboard.html', 700);
+    });
   });
 
   // Forgot password -> open modal
