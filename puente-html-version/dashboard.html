@@ -8,24 +8,72 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">Puente</span><small class="tag">Dashboard</small></div>
+  <div class="brand"><img src="Images/puentelogo.png" alt="Puente logo" class="logo-image"><small class="tag">Dashboard</small></div>
     <div>
       <button id="signout" class="link-btn">Sign out</button>
     </div>
   </header>
 
-  <main style="max-width:1000px;margin:2rem auto;padding:1rem">
-    <h1>Welcome to your dashboard</h1>
-    <p id="welcomeText">Loading...</p>
+  <main style="max-width:1100px;margin:2rem auto;padding:1rem">
+    <div class="dashboard-grid">
+      <div class="dash-main">
+        <!-- Profile card: current user can upload/change a profile picture -->
+        <section class="profile-section" aria-label="Your profile">
+          <div class="profile-card">
+            <img id="profilePic" src="Images/puentelogo.png" alt="Your profile picture" />
+            <div style="flex:1">
+              <div id="profileName" style="font-weight:700">Guest</div>
+              <div id="profileEmail" style="color:var(--muted);font-size:0.95rem">&nbsp;</div>
+              <div style="margin-top:0.6rem">
+                <input type="file" id="profileInput" accept="image/*" class="visually-hidden" />
+                <button id="changePic" class="link-btn">Change photo</button>
+                <button id="removePic" class="link-btn" style="margin-left:.5rem">Remove</button>
+              </div>
+            </div>
+          </div>
+        </section>
 
-    <section style="margin-top:1.25rem">
-      <h3>Your quick links</h3>
-      <ul>
-        <li><a href="#">Resources</a></li>
-        <li><a href="#">My classes</a></li>
-        <li><a href="#">Settings</a></li>
-      </ul>
-    </section>
+        <!-- Role selector: vendor or moto -->
+        <section class="role-section" aria-label="Select role" style="margin-top:0.8rem">
+          <label style="display:flex;align-items:center;gap:.5rem">Role:
+            <select id="roleSelect" style="margin-left:.5rem;padding:.35rem;border-radius:6px">
+              <option value="">-- choose --</option>
+              <option value="vendor">Vendor</option>
+              <option value="moto">Motorcyclist</option>
+            </select>
+          </label>
+          <div id="roleNote" style="color:var(--muted);margin-top:.45rem;font-size:0.95rem">Choose your user type to filter lessons.</div>
+        </section>
+
+        <h1>Welcome to your dashboard</h1>
+        <p id="welcomeText">Loading...</p>
+
+        <section style="margin-top:1.25rem">
+          <h3>Your quick links</h3>
+          <ul>
+            <li><a href="#">Resources</a></li>
+            <li><a href="#">My classes</a></li>
+            <li><a href="#">Settings</a></li>
+          </ul>
+        </section>
+
+        <!-- Lessons / Recommendations rendered here -->
+        <div id="lessonsContainer"></div>
+      </div>
+
+      <aside class="dash-sidebar" aria-label="Dashboard sidebar">
+        <section class="grades-card">
+          <h3>Grades</h3>
+          <div id="gradesList">Loading grades…</div>
+        </section>
+
+        <section class="calendar-card">
+          <h3>Deadlines</h3>
+          <div id="miniCalendar"></div>
+          <div id="upcomingList" style="margin-top:0.6rem;color:var(--muted)"></div>
+        </section>
+      </aside>
+    </div>
   </main>
 
   <script src="dashboard.js"></script>

@@ -1,9 +1,10 @@
 :root{
-  --bg:#fbfdff;
-  --card:#ffffff;
-  --muted:#6b7280;
-  --accent:#2563eb;
-  --accent-2:#0ea5a4;
+  /* green aesthetic palette */
+  --bg: #ecfdf3; /* very light mint green */
+  --card: #ffffff;
+  --muted: #2f5d44; /* muted dark green for secondary text */
+  --accent: #059669; /* emerald/primary accent */
+  --accent-2: #10b981; /* lighter green accent */
   --glass: rgba(255,255,255,0.6);
 }
 
@@ -11,7 +12,8 @@
 body{
   margin:0;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-  background: linear-gradient(180deg,var(--bg),#f6fbfb 60%);
+  /* soft green gradient background for visual appeal */
+  background: linear-gradient(180deg, var(--bg), #d7f3e2 60%);
   color:#0f172a;
   -webkit-font-smoothing:antialiased;
 }
@@ -33,6 +35,24 @@ body{
   font-size:0.75rem;
   color:var(--muted);
 }
+/* Logo image used where the word "Puente" previously appeared */
+.logo-image{
+  height:40px; /* increased for better visibility */
+  width:auto;
+  display:inline-block;
+  vertical-align:middle;
+  margin-right:0.5rem;
+}
+.logo-footer{height:20px;vertical-align:baseline;margin-right:0.35rem}
+
+/* Slightly smaller logo on narrow screens */
+@media (max-width:720px){
+  .logo-image{height:32px}
+  .logo-footer{height:16px}
+}
+
+/* Visually hidden helper for accessibility (if needed) */
+.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;border:0;padding:0;margin:-1px}
 .nav .link{margin-left:1rem;color:var(--muted);text-decoration:none}
 
 .hero{
@@ -86,6 +106,29 @@ body{
 .help a{color:var(--accent-2);text-decoration:underline}
 
 .site-footer{padding:2rem;text-align:center;color:var(--muted);font-size:0.85rem}
+
+/* Profile card on dashboard */
+.profile-card{display:flex;align-items:center;gap:1rem;padding:0.9rem;border-radius:10px;background:var(--card);box-shadow:0 6px 18px rgba(2,6,23,0.06);border:1px solid rgba(2,6,23,0.04)}
+.profile-card img{width:84px;height:84px;object-fit:cover;border-radius:50%;box-shadow:0 6px 18px rgba(2,6,23,0.06)}
+.profile-section{margin-bottom:1rem}
+.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;border:0;padding:0;margin:-1px}
+
+/* Dashboard grid layout */
+.dashboard-grid{display:grid;grid-template-columns:1fr 320px;gap:1rem;align-items:start}
+.dash-sidebar{position:relative}
+.grades-card, .calendar-card{background:var(--card);padding:0.9rem;border-radius:10px;margin-bottom:0.8rem;box-shadow:0 6px 18px rgba(2,6,23,0.04);border:1px solid rgba(2,6,23,0.03)}
+.grades-card table{width:100%;border-collapse:collapse}
+.grades-card th,.grades-card td{padding:0.45rem 0.4rem;text-align:left;font-size:0.95rem}
+.grades-card tr:nth-child(even){background:rgba(2,6,23,0.02)}
+
+/* mini calendar */
+.mini-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:0.82rem}
+.mini-calendar-grid .day{padding:6px;border-radius:6px;text-align:center;background:rgba(2,6,23,0.02)}
+.mini-calendar-grid .day.header{font-weight:700;color:var(--muted);background:transparent}
+.mini-calendar-grid .day.today{border:1px solid rgba(5,150,105,0.14);background:linear-gradient(180deg,rgba(5,150,105,0.06),transparent)}
+.mini-calendar-grid .day.has-deadline{background:linear-gradient(180deg,rgba(16,185,129,0.08),transparent);border:1px solid rgba(16,185,129,0.12)}
+.upcoming-item{display:flex;justify-content:space-between;gap:0.5rem;padding:0.4rem 0;border-bottom:1px dashed rgba(0,0,0,0.04)}
+.upcoming-item:last-child{border-bottom:none}
 
 @media (max-width:980px){
   .hero{grid-template-columns:1fr 1fr;padding:1.5rem}

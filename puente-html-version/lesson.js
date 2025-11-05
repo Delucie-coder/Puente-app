@@ -13,98 +13,91 @@ document.addEventListener('DOMContentLoaded', () => {
   // Moto French lesson metadata
   lessons.lang4 = { title: 'Moto French: Directions & Customer Phrases', desc: 'Short weekly lessons to help moto drivers communicate with French-speaking customers: directions, fares, greetings and safety.' };
 
-  // Try to fetch lesson metadata from API, then render schedule and week content via API
+  // Define reusable rendering functions so offline mode shows meaningful content
+  const schedule = document.getElementById('schedule');
+  const weekContent = document.getElementById('weekContent');
+  const key = `puente_${lessonId}_lastWeek`;
+
+  function renderWeek(week, weekData, lessonId){
+    const videoHtml = weekData && weekData.videoUrl ? `<video controls style="width:100%;max-height:320px;border-radius:8px"><source src="${weekData.videoUrl}" type="audio/mpeg">Your browser does not support the video tag.</video>` : `<div style="background:#000;color:#fff;height:220px;border-radius:8px;display:flex;align-items:center;justify-content:center">Video placeholder for Week ${week}</div>`;
+
+    const phrases = (weekData && weekData.phrases) ? weekData.phrases : [ { phrase: 'Hello', translation: 'Hello', phonetic: 'heh-lo' } ];
+    const phrasesHtml = phrases.map(p => `<li><strong>${p.phrase}</strong> — ${p.translation} <em style="color:#6b7280">(${p.phonetic || ''})</em></li>`).join('');
+
+    const playButtonHtml = phrases.length ? `<button class="signin" onclick="playPhrases(${week}, '${lessonId}', ${JSON.stringify(phrases).replace(/'/g, "\\'")})">Play phrases</button>` : '';
+
+    const exercises = (weekData && weekData.exercises) ? weekData.exercises : [];
+    const exercisesHtml = exercises.map((ex, idx) => {
+      if (ex.type === 'mcq'){
+        const opts = ex.options.map((o,i)=>`<label style="display:block"><input type="radio" name="q-${idx}" value="${i}"> ${o}</label>`).join('');
+        return `<div class="card" style="padding:.6rem;margin-bottom:.5rem"><p style="margin:.1rem 0"><strong>${ex.question}</strong></p>${opts}<button onclick="submitAnswer('${lessonId}',${week},'${ex.id}',${idx})" style="margin-top:.4rem">Submit</button></div>`;
+      }
+      return '';
+    }).join('');
+
+    weekContent.innerHTML = `
+      <h3>Week ${week}</h3>
+      ${videoHtml}
+      <div style="margin-top:.8rem">
+        <h4>Key phrases</h4>
+        <ul>${phrasesHtml}</ul>
+      </div>
+      <div style="margin-top:.8rem">
+        <h4>Exercises</h4>
+        ${exercisesHtml}
+      </div>
+      <div style="margin-top:.6rem">${playButtonHtml}</div>
+    `;
+  }
+
+  function openWeek(week, lessonId){
+    sessionStorage.setItem(key, String(week));
+    fetch(`/api/lesson/${encodeURIComponent(lessonId)}/week/${week}`).then(r => r.json()).then(weekData => {
+      renderWeek(week, weekData, lessonId);
+    }).catch(() => {
+      // create a small demo week for offline use
+      const demoWeek = {
+        week,
+        title: `Week ${week}`,
+        videoUrl: null,
+        phrases: [
+          { phrase: 'Hello', translation: 'Hello', phonetic: 'heh-lo' },
+          { phrase: 'How much?', translation: 'How much does it cost?', phonetic: 'hau much' }
+        ],
+        exercises: [ { id: `q-${lessonId}-${week}-1`, type: 'mcq', question: 'Choose the correct greeting', options: ['Hello','Goodbye','Thanks'], answer: 0 } ]
+      };
+      renderWeek(week, demoWeek, lessonId);
+    });
+  }
+
+  // Fetch lesson metadata and render schedule; fallback to embedded map
   fetch(`/api/lesson/${encodeURIComponent(lessonId)}`).then(r => r.json()).then(meta => {
+    const role = sessionStorage.getItem('puente_role') || '';
+    if (meta.audience && role && meta.audience !== role) {
+      document.getElementById('lessonTitle').textContent = 'Access denied';
+      document.getElementById('lessonDesc').textContent = 'This lesson is only available to users with the appropriate role.';
+      document.getElementById('schedule').innerHTML = '<p style="color:var(--muted)">Please switch your role in the dashboard to access this lesson.</p>';
+      return;
+    }
     document.getElementById('lessonTitle').textContent = meta.title || 'Lesson';
     document.getElementById('lessonDesc').textContent = meta.summary || '';
-
-    const schedule = document.getElementById('schedule');
-    const weekContent = document.getElementById('weekContent');
-
     const weeks = (meta.weeks && meta.weeks.length) ? meta.weeks : Array.from({length:16}, (_,i)=>({week:i+1,title:`Week ${i+1}`}));
-
     const grid = document.createElement('div');
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(120px,1fr))';
-    grid.style.gap = '0.5rem';
-
-    weeks.forEach(w => {
-      const b = document.createElement('button');
-      b.className = 'cta';
-      b.style.padding = '0.6rem';
-      b.textContent = `Week ${w.week}`;
-      b.addEventListener('click', ()=> openWeek(w.week, lessonId));
-      grid.appendChild(b);
-    });
-
+    grid.style.display = 'grid'; grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(120px,1fr))'; grid.style.gap = '0.5rem';
+    weeks.forEach(w => { const b = document.createElement('button'); b.className='cta'; b.style.padding='0.6rem'; b.textContent=`Week ${w.week}`; b.addEventListener('click', ()=> openWeek(w.week, lessonId)); grid.appendChild(b); });
     schedule.appendChild(grid);
-
-    const key = `puente_${lessonId}_lastWeek`;
     const last = parseInt(sessionStorage.getItem(key) || '1', 10);
     openWeek(last, lessonId);
-
-    function openWeek(week, lessonId){
-      // Save progress locally
-      sessionStorage.setItem(key, String(week));
-      // Try to fetch week content from API
-      fetch(`/api/lesson/${encodeURIComponent(lessonId)}/week/${week}`).then(r => r.json()).then(weekData => {
-        renderWeek(week, weekData, lessonId);
-      }).catch(() => {
-        // Fallback display
-        weekContent.innerHTML = `<h3>Week ${week}</h3><p>Content unavailable (offline)</p>`;
-      });
-    }
-
-    function renderWeek(week, weekData, lessonId){
-      // Video area (if videoUrl present embed an HTML5 video or show placeholder)
-      const videoHtml = weekData.videoUrl ? `<video controls style="width:100%;max-height:320px;border-radius:8px"><source src="${weekData.videoUrl}" type="audio/mpeg">Your browser does not support the video tag.</video>` : `<div style="background:#000;color:#fff;height:220px;border-radius:8px;display:flex;align-items:center;justify-content:center">Video placeholder for Week ${week}</div>`;
-
-  // Phrases table
-  const phrases = weekData.phrases || [];
-  const phrasesHtml = phrases.map(p => `<li><strong>${p.phrase}</strong> — ${p.translation} <em style="color:#6b7280">(${p.phonetic})</em></li>`).join('');
-
-  // Add a Play Phrases button that uses SpeechSynthesis (low-bandwidth, client-side audio)
-  const playButtonHtml = phrases.length ? `<button class="signin" onclick="playPhrases(${week}, '${lessonId}', ${JSON.stringify(weekData.phrases).replace(/'/g, "\\'")})">Play phrases</button>` : '';
-
-      // Exercises (MCQs) interactive
-      const exercises = weekData.exercises || [];
-      const exercisesHtml = exercises.map((ex, idx) => {
-        if (ex.type === 'mcq'){
-          const opts = ex.options.map((o,i)=>`<label style="display:block"><input type="radio" name="q-${idx}" value="${i}"> ${o}</label>`).join('');
-          return `<div class="card" style="padding:.6rem;margin-bottom:.5rem"><p style="margin:.1rem 0"><strong>${ex.question}</strong></p>${opts}<button onclick="submitAnswer('${lessonId}',${week},'${ex.id}',${idx})" style="margin-top:.4rem">Submit</button></div>`;
-        }
-        return '';
-      }).join('');
-
-      weekContent.innerHTML = `
-        <h3>Week ${week}</h3>
-        ${videoHtml}
-        <div style="margin-top:.8rem">
-          <h4>Key phrases</h4>
-          <ul>${phrasesHtml}</ul>
-        </div>
-        <div style="margin-top:.8rem">
-          <h4>Exercises</h4>
-          ${exercisesHtml}
-        </div>
-        <div style="margin-top:.6rem">${playButtonHtml}</div>
-      `;
-    }
-
   }).catch(() => {
-    // Offline fallback to previous behavior: simple schedule
     const meta = lessons[lessonId] || { title: 'Lesson', desc: '' };
     document.getElementById('lessonTitle').textContent = meta.title;
     document.getElementById('lessonDesc').textContent = meta.desc;
-    const schedule = document.getElementById('schedule');
-    const weekContent = document.getElementById('weekContent');
     const weeks = Array.from({length:16}, (_,i)=>({week:i+1,title:`Week ${i+1}`}));
-    const grid = document.createElement('div');
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(120px,1fr))';
-    grid.style.gap = '0.5rem';
-    weeks.forEach(w => { const b = document.createElement('button'); b.className='cta'; b.style.padding='0.6rem'; b.textContent=`Week ${w.week}`; b.addEventListener('click', ()=>{ weekContent.innerHTML = `<h3>Week ${w.week}</h3><p>Offline content</p>`;}); grid.appendChild(b); });
+    const grid = document.createElement('div'); grid.style.display = 'grid'; grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(120px,1fr))'; grid.style.gap = '0.5rem';
+    weeks.forEach(w => { const b = document.createElement('button'); b.className='cta'; b.style.padding='0.6rem'; b.textContent=`Week ${w.week}`; b.addEventListener('click', ()=> openWeek(w.week, lessonId)); grid.appendChild(b); });
     schedule.appendChild(grid);
+    const last = parseInt(sessionStorage.getItem(key) || '1', 10);
+    openWeek(last, lessonId);
   });
 });
 

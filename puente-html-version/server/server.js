@@ -12,6 +12,11 @@ app.use(bodyParser.json());
 const STATIC_ROOT = path.join(__dirname, '..');
 app.use('/', express.static(STATIC_ROOT));
 
+// Serve uploaded files (profile pictures)
+const UPLOADS_DIR = path.join(__dirname, 'data', 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+app.use('/uploads', express.static(UPLOADS_DIR));
+
 // Load lessons data
 const DATA_FILE = path.join(__dirname, 'data', 'lessons.json');
 let data = { lessons: [] };
@@ -89,7 +94,7 @@ app.post('/api/login', (req, res) => {
 
 // GET /api/lessons — list of lessons
 app.get('/api/lessons', (req, res) => {
-  const list = data.lessons.map(l => ({ id: l.id, title: l.title, language: l.language, summary: l.summary }));
+  const list = data.lessons.map(l => ({ id: l.id, title: l.title, language: l.language, summary: l.summary, audience: l.audience || 'all' }));
   res.json({ lessons: list });
 });
 
@@ -98,7 +103,7 @@ app.get('/api/lesson/:id', (req, res) => {
   const id = req.params.id;
   const lesson = data.lessons.find(l => l.id === id);
   if (!lesson) return res.status(404).json({ error: 'not found' });
-  res.json({ id: lesson.id, title: lesson.title, language: lesson.language, summary: lesson.summary, weeks: lesson.weeks.map(w => ({ week: w.week, title: w.title })) });
+  res.json({ id: lesson.id, title: lesson.title, language: lesson.language, audience: lesson.audience || 'all', summary: lesson.summary, weeks: lesson.weeks.map(w => ({ week: w.week, title: w.title })) });
 });
 
 // GET /api/lesson/:id/week/:week — week content
@@ -123,6 +128,31 @@ app.post('/api/progress', (req, res) => {
   // Persist to disk
   saveProgress();
   res.json({ ok: true, progress: progressStore[key] });
+});
+
+// POST /api/profile/photo - accept base64 dataUrl and save to server
+app.post('/api/profile/photo', (req, res) => {
+  const { email, dataUrl } = req.body || {};
+  if (!email || !dataUrl) return res.status(400).json({ error: 'missing email or dataUrl' });
+  // dataUrl expected like: data:image/png;base64,....
+  const matches = dataUrl.match(/^data:(image\/(png|jpeg|jpg));base64,(.+)$/);
+  if (!matches) return res.status(400).json({ error: 'invalid dataUrl' });
+  const mime = matches[1];
+  const ext = matches[2] === 'jpeg' ? 'jpg' : matches[2];
+  const b64 = matches[3];
+  const buffer = Buffer.from(b64, 'base64');
+  const safeEmail = email.replace(/[^a-z0-9@._-]/gi, '_');
+  const filename = `${safeEmail}-${Date.now()}.${ext}`;
+  const outPath = path.join(UPLOADS_DIR, filename);
+  try {
+    fs.writeFileSync(outPath, buffer);
+    // return path relative to server root
+    const url = `/uploads/${filename}`;
+    return res.json({ ok: true, url });
+  } catch (err) {
+    console.error('Failed to save uploaded file', err);
+    return res.status(500).json({ error: 'failed to save file' });
+  }
 });
 
 // GET /api/progress?email=&lessonId=
