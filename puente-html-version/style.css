@@ -46,6 +46,11 @@ body{
 }
 
 .hero-left{padding-right:1rem}
+
+/* Ensure there is no decorative background behind the collage image */
+.collage{background:none !important}
+.hero-left{background:none}
+.hero-photo{background:transparent}
 .hero-title{
   font-family:'Playfair Display', serif;
   font-size:2.25rem;
@@ -147,4 +152,4 @@ body{
 .quick-box{
   margin-top:1rem;padding:0.9rem;border-radius:10px;background:linear-gradient(180deg,rgba(14,165,164,0.04),rgba(255,255,255,0.02));border:1px solid rgba(14,165,164,0.08);}
 .quick-box h3{margin:0 0 .4rem 0;color:#065f5a}
-.quick-box .signin{display:inline-block;padding:0.5rem 0.8rem;border-radius:8px}
+.quick-box .quick-link{display:inline-block;padding:0.5rem 0.8rem;border-radius:8px;background:transparent;color:var(--accent-2);border:1px solid rgba(14,165,164,0.12);text-decoration:none}
