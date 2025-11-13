@@ -1,0 +1,37 @@
+{
+  "id": "en_wk1_template",
+  "title": "Week 1 — Greetings & Introductions (English) - Template",
+  "language": "English",
+  "audience": "all",
+  "summary": "Template content for a single-week lesson: phrases, audio placeholders and 2 exercises.",
+  "week": 1,
+  "videoUrl": "/uploads/en_wk1_video.mp4",
+  "audioUrl": "/uploads/en_wk1_audio.mp3",
+  "phrases": {
+    "vendor": [
+      { "phrase": "Hello", "translation": "Bonjour (FR)", "phonetic": "heh-lo" },
+      { "phrase": "How can I help you?", "translation": "Comment puis-je vous aider?", "phonetic": "how can I help you" },
+      { "phrase": "My name is...", "translation": "Je m'appelle...", "phonetic": "my name is" }
+    ],
+    "moto": [
+      { "phrase": "Where to?", "translation": "Où allez-vous ? (FR)", "phonetic": "where to" },
+      { "phrase": "Hop on", "translation": "Montez", "phonetic": "hop on" },
+      { "phrase": "I'll take you to...", "translation": "Je vous emmène à...", "phonetic": "I'll take you to" }
+    ]
+  },
+  "exercises": [
+    {
+      "id": "tmpl-1-1",
+      "type": "mcq",
+      "question": "Which phrase is a greeting?",
+      "options": ["Where are you going?","Hello","How much is this?"],
+      "answer": 1
+    },
+    {
+      "id": "tmpl-1-2",
+      "type": "roleplay",
+      "prompt": "Roleplay: vendor welcomes a tourist and asks how to help. Student records or types the greeting and offer of help.",
+      "expected": ["Hello","How can I help you?"]
+    }
+  ]
+}

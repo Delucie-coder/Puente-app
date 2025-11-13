@@ -19,18 +19,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const key = `puente_${lessonId}_lastWeek`;
 
   function renderWeek(week, weekData, lessonId){
-    const videoHtml = weekData && weekData.videoUrl ? `<video controls style="width:100%;max-height:320px;border-radius:8px"><source src="${weekData.videoUrl}" type="audio/mpeg">Your browser does not support the video tag.</video>` : `<div style="background:#000;color:#fff;height:220px;border-radius:8px;display:flex;align-items:center;justify-content:center">Video placeholder for Week ${week}</div>`;
+  const videoHtml = weekData && weekData.videoUrl ? `<video controls class="video-player"><source src="${weekData.videoUrl}" type="audio/mpeg">Your browser does not support the video tag.</video>` : `<div class="video-placeholder">Video placeholder for Week ${week}</div>`;
 
     const phrases = (weekData && weekData.phrases) ? weekData.phrases : [ { phrase: 'Hello', translation: 'Hello', phonetic: 'heh-lo' } ];
-    const phrasesHtml = phrases.map(p => `<li><strong>${p.phrase}</strong> — ${p.translation} <em style="color:#6b7280">(${p.phonetic || ''})</em></li>`).join('');
+  const phrasesHtml = phrases.map(p => `<li><strong>${p.phrase}</strong> — ${p.translation} <em class="muted">(${p.phonetic || ''})</em></li>`).join('');
 
     const playButtonHtml = phrases.length ? `<button class="signin" onclick="playPhrases(${week}, '${lessonId}', ${JSON.stringify(phrases).replace(/'/g, "\\'")})">Play phrases</button>` : '';
 
     const exercises = (weekData && weekData.exercises) ? weekData.exercises : [];
     const exercisesHtml = exercises.map((ex, idx) => {
       if (ex.type === 'mcq'){
-        const opts = ex.options.map((o,i)=>`<label style="display:block"><input type="radio" name="q-${idx}" value="${i}"> ${o}</label>`).join('');
-        return `<div class="card" style="padding:.6rem;margin-bottom:.5rem"><p style="margin:.1rem 0"><strong>${ex.question}</strong></p>${opts}<button onclick="submitAnswer('${lessonId}',${week},'${ex.id}',${idx})" style="margin-top:.4rem">Submit</button></div>`;
+  const opts = ex.options.map((o,i)=>`<label class="option-label"><input type="radio" name="q-${idx}" value="${i}"> ${o}</label>`).join('');
+  return `<div class="card exercise-card"><p style="margin:.1rem 0"><strong>${ex.question}</strong></p>${opts}<button class="btn" onclick="submitAnswer('${lessonId}',${week},'${ex.id}',${idx})">Submit</button></div>`;
       }
       return '';
     }).join('');
@@ -82,10 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('lessonTitle').textContent = meta.title || 'Lesson';
     document.getElementById('lessonDesc').textContent = meta.summary || '';
     const weeks = (meta.weeks && meta.weeks.length) ? meta.weeks : Array.from({length:16}, (_,i)=>({week:i+1,title:`Week ${i+1}`}));
-    const grid = document.createElement('div');
-    grid.style.display = 'grid'; grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(120px,1fr))'; grid.style.gap = '0.5rem';
-    weeks.forEach(w => { const b = document.createElement('button'); b.className='cta'; b.style.padding='0.6rem'; b.textContent=`Week ${w.week}`; b.addEventListener('click', ()=> openWeek(w.week, lessonId)); grid.appendChild(b); });
-    schedule.appendChild(grid);
+  const grid = document.createElement('div');
+  grid.className = 'week-grid';
+  weeks.forEach(w => { const b = document.createElement('button'); b.className='btn'; b.textContent=`Week ${w.week}`; b.addEventListener('click', ()=> openWeek(w.week, lessonId)); grid.appendChild(b); });
+  schedule.appendChild(grid);
     const last = parseInt(sessionStorage.getItem(key) || '1', 10);
     openWeek(last, lessonId);
   }).catch(() => {
@@ -93,9 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('lessonTitle').textContent = meta.title;
     document.getElementById('lessonDesc').textContent = meta.desc;
     const weeks = Array.from({length:16}, (_,i)=>({week:i+1,title:`Week ${i+1}`}));
-    const grid = document.createElement('div'); grid.style.display = 'grid'; grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(120px,1fr))'; grid.style.gap = '0.5rem';
-    weeks.forEach(w => { const b = document.createElement('button'); b.className='cta'; b.style.padding='0.6rem'; b.textContent=`Week ${w.week}`; b.addEventListener('click', ()=> openWeek(w.week, lessonId)); grid.appendChild(b); });
-    schedule.appendChild(grid);
+  const grid = document.createElement('div'); grid.className='week-grid';
+  weeks.forEach(w => { const b = document.createElement('button'); b.className='btn'; b.textContent=`Week ${w.week}`; b.addEventListener('click', ()=> openWeek(w.week, lessonId)); grid.appendChild(b); });
+  schedule.appendChild(grid);
     const last = parseInt(sessionStorage.getItem(key) || '1', 10);
     openWeek(last, lessonId);
   });

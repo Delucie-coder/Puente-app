@@ -1,0 +1,16 @@
+[
+  {
+    "id": "a1",
+    "title": "Lesson 1: Greetings Quiz",
+    "due": "2025-11-10",
+    "createdBy": "admin@example.com",
+    "created": 1760000000000
+  },
+  {
+    "id": "a2",
+    "title": "Market Roleplay Exercise",
+    "due": "2025-11-14",
+    "createdBy": "admin@example.com",
+    "created": 1760000001000
+  }
+]

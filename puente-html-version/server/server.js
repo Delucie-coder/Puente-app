@@ -1,12 +1,15 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+// allow larger JSON bodies for image uploads (base64 data URLs)
+app.use(bodyParser.json({ limit: '8mb' }));
+app.use(bodyParser.urlencoded({ limit: '8mb', extended: true }));
 
 // Serve static front-end files from the parent directory (puente-html-version)
 const STATIC_ROOT = path.join(__dirname, '..');
@@ -28,9 +31,12 @@ try {
 
 // Helper to ensure each lesson has 16 weeks of demo content
 function ensureWeeks(lesson) {
-  if (!lesson.weeks || lesson.weeks.length < 16) {
-    lesson.weeks = [];
-    for (let i = 1; i <= 16; i++) {
+  // Ensure we don't overwrite existing week objects. If weeks are missing, append placeholder weeks up to 16.
+  if (!lesson.weeks) lesson.weeks = [];
+  const existing = {};
+  lesson.weeks.forEach(w => { if (w && w.week) existing[w.week] = w; });
+  for (let i = 1; i <= 16; i++) {
+    if (!existing[i]) {
       lesson.weeks.push({
         week: i,
         title: `Week ${i}`,
@@ -59,6 +65,8 @@ function ensureWeeks(lesson) {
       });
     }
   }
+  // keep weeks sorted by week number
+  lesson.weeks.sort((a, b) => (a.week || 0) - (b.week || 0));
 }
 
 data.lessons.forEach(ensureWeeks);
@@ -83,13 +91,116 @@ function saveProgress() {
   }
 }
 
+// -----------------------
+// Simple users store
+// -----------------------
+const USERS_FILE = path.join(__dirname, 'data', 'users.json');
+let users = {};
+try {
+  if (fs.existsSync(USERS_FILE)) {
+    users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')) || {};
+  }
+} catch (err) {
+  console.warn('Could not load users.json', err);
+  users = {};
+}
+
+function saveUsers() {
+  try {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('Failed to save users', err);
+  }
+}
+
+// Simple password hashing utilities (demo only)
+function hashPassword(password, salt){
+  salt = salt || crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(String(password), salt, 64).toString('hex');
+  return { salt, hash: derived };
+}
+
+// Ensure a default admin exists for demo convenience
+if (!users['admin@example.com']){
+  const pwd = 'adminpass';
+  const ph = hashPassword(pwd);
+  users['admin@example.com'] = { email: 'admin@example.com', name: 'Administrator', photoUrl: null, created: Date.now(), role: 'admin', passwordHash: ph.hash, passwordSalt: ph.salt };
+  saveUsers();
+  console.log('Created demo admin user: admin@example.com (password: adminpass)');
+}
+
 // POST /api/login — demo accepts any credentials and returns token + user
 app.post('/api/login', (req, res) => {
-  const { email } = req.body || {};
+  const { email, name, role, password } = req.body || {};
   if (!email) return res.status(400).json({ error: 'missing email' });
   const token = 'demo-token-' + Math.random().toString(36).slice(2, 9);
-  const user = { email };
-  res.json({ token, user });
+
+  const key = String(email).toLowerCase();
+  const existing = users[key];
+  // If user exists and has a passwordHash, require password to authenticate
+  if (existing && existing.passwordHash) {
+    if (!password) return res.status(401).json({ error: 'password required' });
+    const candidate = hashPassword(password, existing.passwordSalt);
+    if (candidate.hash !== existing.passwordHash) return res.status(401).json({ error: 'invalid credentials' });
+    // authenticated
+    const user = Object.assign({}, existing);
+    return res.json({ token, user });
+  }
+
+  // legacy / first-login flow: create or update simple user record without password
+  users[key] = users[key] || { email: key, name: name || null, photoUrl: null, created: Date.now() };
+  // accept role from client but persist it on server-side
+  if (role) users[key].role = role;
+  if (!users[key].role) users[key].role = 'student';
+  // create a token for the session and persist it on the user record
+  const tokenValue = 'tkn_' + Math.random().toString(36).slice(2,22);
+  users[key].token = tokenValue;
+  saveUsers();
+  const user = Object.assign({}, users[key]);
+  res.json({ token: tokenValue, user });
+});
+
+// POST /api/register - create a user with password (demo)
+app.post('/api/register', (req, res) => {
+  const { email, name, password, role } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'missing email or password' });
+  const key = String(email).toLowerCase();
+  if (users[key] && users[key].passwordHash) return res.status(409).json({ error: 'user exists' });
+  const ph = hashPassword(password);
+  users[key] = users[key] || { email: key, name: name || null, photoUrl: null, created: Date.now() };
+  users[key].passwordHash = ph.hash;
+  users[key].passwordSalt = ph.salt;
+  users[key].role = role || users[key].role || 'student';
+  // create token and persist
+  const tokenValue = 'tkn_' + Math.random().toString(36).slice(2,22);
+  users[key].token = tokenValue;
+  saveUsers();
+  const user = Object.assign({}, users[key]);
+  res.json({ ok:true, token: tokenValue, user });
+});
+
+// Helper: get user from Authorization header (Bearer token)
+function getUserFromAuth(req){
+  const auth = req.headers['authorization'] || req.headers['Authorization'];
+  if (!auth) return null;
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  if (!m) return null;
+  const token = m[1];
+  // find user with matching token
+  for (const k of Object.keys(users)){
+    const u = users[k];
+    if (u && u.token === token) return u;
+  }
+  return null;
+}
+
+// GET user record
+app.get('/api/user', (req, res) => {
+  const email = req.query.email;
+  if (!email) return res.status(400).json({ error: 'missing email' });
+  const key = String(email).toLowerCase();
+  const u = users[key] || null;
+  res.json({ user: u });
 });
 
 // GET /api/lessons — list of lessons
@@ -103,7 +214,15 @@ app.get('/api/lesson/:id', (req, res) => {
   const id = req.params.id;
   const lesson = data.lessons.find(l => l.id === id);
   if (!lesson) return res.status(404).json({ error: 'not found' });
-  res.json({ id: lesson.id, title: lesson.title, language: lesson.language, audience: lesson.audience || 'all', summary: lesson.summary, weeks: lesson.weeks.map(w => ({ week: w.week, title: w.title })) });
+  // Return the full lesson object (including full week objects) so the client
+  // can render week content when a user opens a lesson/week without needing
+  // separate per-week fetches.
+  // Keep a lightweight representation for listing (/api/lessons) but here we
+  // return the full lesson payload to support the dashboard UI.
+  const safeLesson = Object.assign({}, lesson);
+  // Ensure weeks are included (they are loaded/ensured at server start)
+  safeLesson.weeks = lesson.weeks || [];
+  return res.json(safeLesson);
 });
 
 // GET /api/lesson/:id/week/:week — week content
@@ -118,41 +237,181 @@ app.get('/api/lesson/:id/week/:week', (req, res) => {
 });
 
 // POST /api/progress — store progress in-memory
-app.post('/api/progress', (req, res) => {
-  const { email, lessonId, week, result } = req.body || {};
-  if (!email || !lessonId) return res.status(400).json({ error: 'missing fields' });
-  const key = `${email}:${lessonId}`;
-  progressStore[key] = progressStore[key] || { completed: [] };
-  if (week && !progressStore[key].completed.includes(week)) progressStore[key].completed.push(week);
-  if (result) progressStore[key].lastResult = result;
-  // Persist to disk
-  saveProgress();
-  res.json({ ok: true, progress: progressStore[key] });
-});
-
-// POST /api/profile/photo - accept base64 dataUrl and save to server
 app.post('/api/profile/photo', (req, res) => {
-  const { email, dataUrl } = req.body || {};
-  if (!email || !dataUrl) return res.status(400).json({ error: 'missing email or dataUrl' });
-  // dataUrl expected like: data:image/png;base64,....
-  const matches = dataUrl.match(/^data:(image\/(png|jpeg|jpg));base64,(.+)$/);
-  if (!matches) return res.status(400).json({ error: 'invalid dataUrl' });
-  const mime = matches[1];
-  const ext = matches[2] === 'jpeg' ? 'jpg' : matches[2];
-  const b64 = matches[3];
-  const buffer = Buffer.from(b64, 'base64');
-  const safeEmail = email.replace(/[^a-z0-9@._-]/gi, '_');
-  const filename = `${safeEmail}-${Date.now()}.${ext}`;
-  const outPath = path.join(UPLOADS_DIR, filename);
+  const { dataUrl } = req.body || {};
+  if (!dataUrl) return res.status(400).json({ error: 'missing params' });
   try {
+    // Require authenticated user
+    const authUser = getUserFromAuth(req);
+    if (!authUser) return res.status(401).json({ error: 'unauthenticated' });
+    const safeEmail = String(authUser.email).toLowerCase();
+    const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
+    if (!matches) return res.status(400).json({ error: 'invalid dataUrl' });
+    const mime = matches[1];
+    const b64 = matches[2];
+    const ext = mime.split('/')[1] || 'png';
+    const filename = `${safeEmail.replace(/[^a-z0-9.\-@_]/gi, '_')}-${Date.now()}.${ext}`;
+    const outPath = path.join(UPLOADS_DIR, filename);
+    const buffer = Buffer.from(b64, 'base64');
+
+    // If the user has an existing photo, attempt to remove it to avoid orphan files
+    try {
+      users[safeEmail] = users[safeEmail] || { email: safeEmail, name: null, photoUrl: null, created: Date.now() };
+      const prevUrl = users[safeEmail].photoUrl;
+      if (prevUrl) {
+        const prevName = path.basename(prevUrl);
+        const prevPath = path.join(UPLOADS_DIR, prevName);
+        if (fs.existsSync(prevPath)) {
+          try { fs.unlinkSync(prevPath); } catch (e) { console.warn('Could not delete previous photo', prevPath, e); }
+        }
+      }
+    } catch (e) {
+      console.warn('Error while cleaning previous photo', e);
+    }
+
     fs.writeFileSync(outPath, buffer);
     // return path relative to server root
     const url = `/uploads/${filename}`;
-    return res.json({ ok: true, url });
+
+    // associate the uploaded photo with the server-side user record
+    const key = safeEmail;
+    users[key] = users[key] || { email: key, name: null, photoUrl: null, created: Date.now() };
+    users[key].photoUrl = url;
+    saveUsers();
+
+    // Return updated user object so the client can persist state immediately
+    return res.json({ ok: true, url, user: users[key] });
   } catch (err) {
     console.error('Failed to save uploaded file', err);
-    return res.status(500).json({ error: 'failed to save file' });
+    return res.status(500).json({ error: 'failed to save' });
   }
+});
+
+// POST /api/profile/photo/delete - remove user's photo (demo)
+app.post('/api/profile/photo/delete', (req, res) => {
+  const authUser = getUserFromAuth(req);
+  if (!authUser) return res.status(401).json({ error: 'unauthenticated' });
+  const key = String(authUser.email).toLowerCase();
+  if (!users[key] || !users[key].photoUrl) return res.json({ ok: true, removed: false });
+  try {
+    const url = users[key].photoUrl;
+    // url is like /uploads/filename
+    const filename = path.basename(url);
+    const filePath = path.join(UPLOADS_DIR, filename);
+    if (fs.existsSync(filePath)) {
+      try { fs.unlinkSync(filePath); } catch (e) { console.warn('Could not delete file', filePath, e); }
+    }
+    users[key].photoUrl = null;
+    saveUsers();
+    return res.json({ ok: true, removed: true, user: users[key] });
+  } catch (err) {
+    console.error('Failed to remove user photo', err);
+    return res.status(500).json({ error: 'failed to remove' });
+  }
+});
+
+// -----------------------
+// Settings persistence (pass thresholds, etc.)
+// -----------------------
+const SETTINGS_FILE = path.join(__dirname, 'data', 'settings.json');
+let settingsStore = { defaults: { passThreshold: 70 }, lessons: {} };
+try {
+  if (fs.existsSync(SETTINGS_FILE)) settingsStore = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) || settingsStore;
+} catch (err) { console.warn('Could not load settings.json', err); settingsStore = settingsStore; }
+
+function saveSettings(){ try { fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settingsStore, null, 2), 'utf8'); } catch(e){ console.warn('Failed to save settings', e); } }
+
+// GET /api/settings?lessonId=<id>
+// returns { passThreshold: number, source: 'lesson'|'default' }
+app.get('/api/settings', (req, res) => {
+  const lessonId = req.query.lessonId;
+  let pass = (settingsStore && settingsStore.defaults && typeof settingsStore.defaults.passThreshold === 'number') ? settingsStore.defaults.passThreshold : 70;
+  let source = 'default';
+  if (lessonId && settingsStore && settingsStore.lessons && settingsStore.lessons[lessonId] && typeof settingsStore.lessons[lessonId].passThreshold === 'number'){
+    pass = settingsStore.lessons[lessonId].passThreshold;
+    source = 'lesson';
+  }
+  res.json({ passThreshold: Number(pass), source });
+});
+
+// POST /api/settings - admin only. Body: { passThreshold: number, lessonId?: string }
+app.post('/api/settings', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const { passThreshold, lessonId } = req.body || {};
+  if (passThreshold === undefined || passThreshold === null) return res.status(400).json({ error: 'missing passThreshold' });
+  const num = Number(passThreshold);
+  if (isNaN(num) || num < 0 || num > 100) return res.status(400).json({ error: 'passThreshold must be a number 0-100' });
+
+  if (lessonId) {
+    settingsStore.lessons = settingsStore.lessons || {};
+    settingsStore.lessons[lessonId] = Object.assign(settingsStore.lessons[lessonId] || {}, { passThreshold: Math.round(num) });
+  } else {
+    settingsStore.defaults = settingsStore.defaults || {};
+    settingsStore.defaults.passThreshold = Math.round(num);
+  }
+  saveSettings();
+  return res.json({ ok: true, passThreshold: Math.round(num), lessonId: lessonId || null });
+});
+
+// -----------------------
+// Resources persistence
+// -----------------------
+const RESOURCES_FILE = path.join(__dirname, 'data', 'resources.json');
+let resourcesStore = [];
+try {
+  if (fs.existsSync(RESOURCES_FILE)) {
+    resourcesStore = JSON.parse(fs.readFileSync(RESOURCES_FILE, 'utf8')) || [];
+  }
+} catch (err) {
+  console.warn('Could not load resources.json', err);
+  resourcesStore = [];
+}
+
+function saveResources() {
+  try {
+    fs.writeFileSync(RESOURCES_FILE, JSON.stringify(resourcesStore, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('Failed to save resources', err);
+  }
+}
+
+// GET /api/resources
+app.get('/api/resources', (req, res) => {
+  res.json({ resources: resourcesStore });
+});
+
+// POST /api/resource - accept title, dataUrl(optional), filename, audience
+app.post('/api/resource', (req, res) => {
+  const { title, dataUrl, filename, audience } = req.body || {};
+  if (!title) return res.status(400).json({ error: 'missing title' });
+  // require authenticated uploader
+  const authUser = getUserFromAuth(req);
+  if (!authUser) return res.status(401).json({ error: 'unauthenticated' });
+  const id = 'r_' + Math.random().toString(36).slice(2,9);
+  let url = null;
+  if (dataUrl) {
+    const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
+    if (matches) {
+      const mime = matches[1];
+      const b64 = matches[2];
+      const ext = mime.split('/')[1] || 'bin';
+      const safeName = (filename || id).replace(/[^a-z0-9.\-_]/gi, '_');
+      const outName = `${id}-${safeName}`;
+      const outPath = path.join(UPLOADS_DIR, outName);
+      try {
+        fs.writeFileSync(outPath, Buffer.from(b64, 'base64'));
+        url = `/uploads/${outName}`;
+      } catch (err) {
+        console.error('Failed to save resource file', err);
+      }
+    }
+  }
+  const rec = { id, title, filename: filename || null, url, audience: audience || 'all', uploader: authUser.email || null, created: Date.now() };
+  resourcesStore.unshift(rec);
+  saveResources();
+  res.json({ ok: true, resource: rec });
 });
 
 // GET /api/progress?email=&lessonId=
@@ -163,6 +422,173 @@ app.get('/api/progress', (req, res) => {
   res.json({ progress: progressStore[key] || null });
 });
 
-// Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Puente mock server running on http://localhost:${PORT}`));
+// GET /api/assignments?email=
+// Assignments persistence
+const ASSIGNMENTS_FILE = path.join(__dirname, 'data', 'assignments.json');
+let assignmentsStore = [];
+try {
+  if (fs.existsSync(ASSIGNMENTS_FILE)) assignmentsStore = JSON.parse(fs.readFileSync(ASSIGNMENTS_FILE, 'utf8')) || [];
+} catch (err) { console.warn('Could not load assignments.json', err); assignmentsStore = []; }
+
+function saveAssignments(){ try { fs.writeFileSync(ASSIGNMENTS_FILE, JSON.stringify(assignmentsStore, null, 2), 'utf8'); } catch (e){ console.warn('Failed to save assignments', e); } }
+
+// GET assignments - returns persisted assignments (optionally filtered by email)
+app.get('/api/assignments', (req, res) => {
+  const { email } = req.query;
+  // for demo, we ignore email and return all assignments; in a multi-tenant app you'd filter
+  return res.json({ assignments: assignmentsStore });
+});
+
+// -----------------------
+// Quiz attempts persistence
+// -----------------------
+const ATTEMPTS_FILE = path.join(__dirname, 'data', 'attempts.json');
+let attemptsStore = [];
+try {
+  if (fs.existsSync(ATTEMPTS_FILE)) attemptsStore = JSON.parse(fs.readFileSync(ATTEMPTS_FILE, 'utf8')) || [];
+} catch (e) { console.warn('Could not load attempts.json', e); attemptsStore = []; }
+
+function saveAttempts(){ try { fs.writeFileSync(ATTEMPTS_FILE, JSON.stringify(attemptsStore, null, 2), 'utf8'); } catch (e){ console.warn('Failed to save attempts', e); } }
+
+// POST /api/attempts - record a quiz attempt (authenticated)
+app.post('/api/attempts', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  const { lessonId, week, answers } = req.body || {};
+  if (!lessonId || !week || !Array.isArray(answers)) return res.status(400).json({ error: 'missing params' });
+  // find canonical lesson/week to grade against
+  const lesson = data.lessons.find(l => l.id === lessonId);
+  if (!lesson) return res.status(400).json({ error: 'invalid lessonId' });
+  const wk = lesson.weeks.find(w => String(w.week) === String(week));
+  if (!wk) return res.status(400).json({ error: 'invalid week' });
+  // compute score: compare mcq answers
+  let total = 0, correct = 0;
+  (wk.exercises || []).forEach((ex, idx) => {
+    if (ex.type === 'mcq'){
+      total++;
+      const given = answers[idx];
+      if (given === null || given === undefined) return;
+      // Normalize canonical correct value. Support new schema with answerId and option objects,
+      // and legacy numeric index answers.
+      let canonicalCorrect = null;
+      if (ex.hasOwnProperty('answerId')) {
+        canonicalCorrect = String(ex.answerId);
+      } else if (ex.hasOwnProperty('answer')) {
+        if (typeof ex.answer === 'number') {
+          // If options are objects with ids, prefer that id as the canonical answer
+          const opt = Array.isArray(ex.options) ? ex.options[ex.answer] : undefined;
+          if (opt && typeof opt === 'object' && opt.id) canonicalCorrect = String(opt.id);
+          else canonicalCorrect = String(ex.answer);
+        } else {
+          canonicalCorrect = String(ex.answer);
+        }
+      }
+
+      // Normalize given answer: could be an index, an id string, or numeric string
+      let canonicalGiven = String(given);
+      // if given looks like an index and options exist, map to option id when possible
+      if (!isNaN(Number(canonicalGiven)) && Array.isArray(ex.options)){
+        const idxGiven = Number(canonicalGiven);
+        const optGiven = ex.options[idxGiven];
+        if (optGiven && typeof optGiven === 'object' && optGiven.id) canonicalGiven = String(optGiven.id);
+      }
+
+      // Compare either as strings or numeric equality if both numeric
+      const bothNumeric = !isNaN(Number(canonicalGiven)) && !isNaN(Number(canonicalCorrect));
+      const isCorrect = bothNumeric ? (Number(canonicalGiven) === Number(canonicalCorrect)) : (canonicalGiven === canonicalCorrect);
+      if (isCorrect) correct++;
+    }
+  });
+  const score = total ? Math.round((correct / total) * 100) : null;
+  const id = 'at_' + Math.random().toString(36).slice(2,9);
+  const rec = { id, lessonId, week: String(week), answers, score, createdBy: actor.email, created: Date.now() };
+  attemptsStore.unshift(rec);
+  saveAttempts();
+  res.json({ ok:true, attempt: rec });
+});
+
+// GET /api/progress/summary?lessonId=&week= - summary of attempts (best score, count, lastAttempt)
+app.get('/api/progress/summary', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  const { lessonId, week } = req.query;
+  let list = attemptsStore.slice();
+  if (lessonId) list = list.filter(a => a.lessonId === lessonId);
+  if (week) list = list.filter(a => String(a.week) === String(week));
+  if (actor.role !== 'admin') list = list.filter(a => String(a.createdBy).toLowerCase() === String(actor.email).toLowerCase());
+  const attemptsCount = list.length;
+  const bestScore = attemptsCount ? Math.max(...list.map(a => (a.score===null||a.score===undefined)? -1 : a.score)) : null;
+  const lastAttempt = attemptsCount ? list[0].created : null;
+  res.json({ lessonId: lessonId || null, week: week || null, attemptsCount, bestScore: bestScore >= 0 ? bestScore : null, lastAttempt });
+});
+
+// GET /api/attempts?lessonId=&week= - returns attempts for the authenticated user (or all if admin)
+app.get('/api/attempts', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  const { lessonId, week } = req.query;
+  let list = attemptsStore.slice();
+  if (lessonId) list = list.filter(a => a.lessonId === lessonId);
+  if (week) list = list.filter(a => String(a.week) === String(week));
+  // if not admin, only return attempts created by the authenticated user
+  if (actor.role !== 'admin') list = list.filter(a => String(a.createdBy).toLowerCase() === String(actor.email).toLowerCase());
+  res.json({ attempts: list });
+});
+
+// POST /api/assignments - create a new assignment (admin only)
+app.post('/api/assignments', (req, res) => {
+  const { title, due, lessonId } = req.body || {};
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  if (!title || !due) return res.status(400).json({ error: 'missing title or due date' });
+  const id = 'a_' + Math.random().toString(36).slice(2,9);
+  const rec = { id, title, due, lessonId: lessonId || null, createdBy: actor.email || null, created: Date.now() };
+  assignmentsStore.push(rec);
+  saveAssignments();
+  res.json({ ok:true, assignment: rec });
+});
+
+// PUT /api/assignments/:id - update assignment (admin only)
+app.put('/api/assignments/:id', (req, res) => {
+  const { id } = req.params;
+  const { title, due, lessonId } = req.body || {};
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const idx = assignmentsStore.findIndex(a=>a.id===id);
+  if (idx === -1) return res.status(404).json({ error: 'not found' });
+  if (title) assignmentsStore[idx].title = title;
+  if (due) assignmentsStore[idx].due = due;
+  if (lessonId !== undefined) assignmentsStore[idx].lessonId = lessonId || null;
+  assignmentsStore[idx].updated = Date.now();
+  saveAssignments();
+  res.json({ ok:true, assignment: assignmentsStore[idx] });
+});
+
+// DELETE /api/assignments/:id - admin only
+app.delete('/api/assignments/:id', (req, res) => {
+  const { id } = req.params;
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const idx = assignmentsStore.findIndex(a=>a.id===id);
+  if (idx === -1) return res.json({ ok:true, removed:false });
+  const removed = assignmentsStore.splice(idx,1)[0];
+  saveAssignments();
+  res.json({ ok:true, removed:true, assignment: removed });
+});
+
+// Start server (default port changed to 3001 to avoid conflicts on developer machines)
+const PORT = process.env.PORT || 3001;
+const server = app.listen(PORT, () => console.log(`Puente mock server running on http://localhost:${PORT}`));
+
+// Better error messaging for common startup problems (EADDRINUSE etc.)
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Stop the process using that port or set a different PORT environment variable.`);
+    process.exit(1);
+  }
+  console.error('Server error', err);
+  process.exit(1);
+});

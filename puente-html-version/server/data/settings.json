@@ -1,0 +1,10 @@
+{
+  "defaults": {
+    "passThreshold": 70
+  },
+  "lessons": {
+    "vendor_bilingual": {
+      "passThreshold": 74
+    }
+  }
+}

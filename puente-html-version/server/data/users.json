@@ -1,0 +1,18 @@
+{
+  "testuser@example.com": {
+    "email": "testuser@example.com",
+    "name": null,
+    "photoUrl": "/uploads/testuser@example.com-1762431769262.png",
+    "created": 1762431769267
+  },
+  "admin@example.com": {
+    "email": "admin@example.com",
+    "name": "Administrator",
+    "photoUrl": null,
+    "created": 1762527044969,
+    "role": "admin",
+    "passwordHash": "8964f8fd461b2830a3a8f4c76d2d624f9fb90d9c3532dc64a99b5987cb757bde136d4de8bb6a913241d7e0d4519da3c91959feeec5157ba49f06f350c2deb702",
+    "passwordSalt": "f238172315de256d32aa035706763faa",
+    "token": "tkn_test_th6gw62qdv"
+  }
+}

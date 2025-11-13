@@ -1,91 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puente – Education Resource Hub</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Puente — Login</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
-<body>
-  <header class="topbar">
+<body class="auth-body">
+  <div class="auth-card">
     <div class="brand">
-      <img src="Images/puentelogo.png" alt="Puente logo" class="logo-image">
-      <small class="tag">Bridge Learning • Locally</small>
-    </div>
-    <nav class="nav">
-      <a href="#" class="link">About</a>
-      <a href="#" class="link">Schools</a>
-      <a href="#" class="link">Help</a>
-    </nav>
-  </header>
-
-  <main class="hero">
-    <section class="hero-left">
-      <h1 class="hero-title">Puente helps learners thrive</h1>
-  <p class="hero-sub">Learn English and French basics tailored for Rwandan motorcyclists (moto drivers) and local street vendors — short lessons and phrases to help you communicate with customers who don't speak Kinyarwanda.</p>
-
-      <div class="collage" aria-hidden="false">
-          <!-- Your local image (found in `Images/` folder) -->
-          <img src="Images/loginpic.png" alt="Local motorcyclists and vendors" class="hero-photo" loading="lazy">
+      <div class="logo-circle" aria-hidden="false">
+        <img src="Images/puentelogo.png" alt="Puente logo" class="logo-img" />
       </div>
-      <!-- Quick access box for Moto French -->
-      <div class="quick-box" role="region" aria-label="Moto French quick start">
-        <h3>Moto French — quick start</h3>
-        <p style="margin:0 0 .6rem 0;color:var(--muted)">Short phrases for moto drivers: give directions, ask for fares, and greet French-speaking customers.</p>
-        <a class="quick-link" href="lesson.html?id=lang4">Start Moto French</a>
-      </div>
-    </section>
-
-    <aside class="signup-card login-card" aria-labelledby="loginHeading">
-      <h2 id="loginHeading">Sign in to Puente</h2>
-
-      <form id="loginForm" novalidate>
-        <label class="field">
-          <span class="label">Email</span>
-          <input type="email" id="email" name="email" placeholder="you@example.com" required aria-required="true">
-        </label>
-
-        <label class="field">
-          <span class="label">Password</span>
-          <div class="pw-row">
-            <input type="password" id="password" name="password" placeholder="Enter your password" required aria-required="true">
-            <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">👁️</button>
-          </div>
-        </label>
-
-        <div class="form-row">
-          <label class="remember"><input type="checkbox" id="remember"> Remember me</label>
-          <button type="button" class="link-btn" id="forgotBtn">Forgot password?</button>
-        </div>
-
-        <button type="submit" class="signin">Sign in</button>
-      </form>
-
-  <!-- district admin link removed as requested -->
-    </aside>
-
-    <!-- Reset modal (hidden until triggered) -->
-    <div id="resetModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
-      <div class="modal-content">
-        <h3 id="resetTitle">Reset your password</h3>
-        <p>Enter your account email and we'll send a reset link (demo).</p>
-        <label class="field"><span class="label">Email</span><input type="email" id="resetEmail" placeholder="you@example.com"></label>
-        <div style="display:flex;gap:.5rem;margin-top:1rem;justify-content:flex-end">
-          <button onclick="closeReset()">Cancel</button>
-          <button id="sendReset">Send reset link</button>
-        </div>
+      <div class="brand-text">
+        <h1>Puente</h1>
+        <p>Bridging the digital divide</p>
       </div>
     </div>
-  </main>
 
-  <footer class="site-footer">
-    © <img src="Images/puentelogo.png" alt="Puente logo" class="logo-image logo-footer"> — Prototype · Built for low-bandwidth contexts
-  </footer>
+    <form id="loginForm" class="auth-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" placeholder="e.g. delucie.r" required />
+      </div>
 
-  <script src="login.js"></script>
-  <script src="script.js" defer></script>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="••••••••" required />
+      </div>
+
+      <div class="form-group">
+        <label for="role">Select Role</label>
+        <select id="role" name="role" required>
+          <option value="" disabled selected>Choose your role</option>
+          <option value="vendor">Vendor</option>
+          <option value="moto">Motorcyclist</option>
+          <option value="contributor">Contributor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-primary">Login</button>
+      <p class="muted">Demo: pick any role to explore the dashboards.</p>
+    </form>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
