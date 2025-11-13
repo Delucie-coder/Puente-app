@@ -40,6 +40,24 @@ function openLesson(id){
     } catch(e){ console.warn('initRail', e); }
   }
 
+    // Simple toast helper to show brief notifications
+    function showToast(message, timeout){
+      try{
+        timeout = typeof timeout === 'number' ? timeout : 3500;
+        let container = document.getElementById('puente-toast-container');
+        if (!container){
+          container = document.createElement('div'); container.id = 'puente-toast-container';
+          container.style.position = 'fixed'; container.style.right = '16px'; container.style.bottom = '16px'; container.style.zIndex = '9999';
+          document.body.appendChild(container);
+        }
+        const t = document.createElement('div'); t.className = 'puente-toast';
+        t.textContent = String(message || '');
+        t.style.background = 'rgba(0,0,0,0.8)'; t.style.color = '#fff'; t.style.padding = '10px 14px'; t.style.marginTop = '8px'; t.style.borderRadius = '6px'; t.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)'; t.style.fontSize = '13px';
+        container.appendChild(t);
+        setTimeout(()=>{ try{ t.style.transition = 'opacity 300ms'; t.style.opacity = '0'; setTimeout(()=> t.remove(), 320); }catch(e){} }, timeout);
+      }catch(e){/* ignore toast errors */}
+    }
+
   // keyboard shortcuts Alt+1..7 (primary), Ctrl+Alt fallback handled by browser/platform if needed
   document.addEventListener('keydown', (e)=>{
     if (!e.altKey) return; // require Alt
@@ -479,14 +497,18 @@ function openLesson(id){
                     // show server-saved feedback to the user
                     try{
                       if (feedback) feedback.textContent = `Saved to server — score: ${res.attempt.score}%`;
+                      showToast(`Saved to server — score: ${res.attempt.score}%`, 3500);
                     }catch(e){}
                   } else if (res && res.error){
                     try{ if (feedback) feedback.textContent = `Server error: ${res.error}`; }catch(e){}
+                    showToast(`Server error: ${res.error}`, 4500);
                   } else {
                     try{ if (feedback) feedback.textContent = 'Attempt submitted (server did not return score).'; }catch(e){}
+                    showToast('Attempt submitted (server did not return score).', 3500);
                   }
                 }).catch(()=>{
                   try{ if (feedback) feedback.textContent = 'Saved locally (server unavailable or unauthenticated).'; }catch(e){}
+                  showToast('Saved locally (server unavailable or unauthenticated).', 4500);
                 });
           }catch(e){/* ignore best-effort submission errors */}
         });

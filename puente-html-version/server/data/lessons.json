@@ -82,6 +82,8 @@
           "title": "Introduction to Market English",
           "videoUrl": "/media/meg/week1/why-english.mp4",
           "audioUrl": "/media/meg/week1/intro-audio.mp3",
+          "thumbnailUrl": "/media/meg/week1/thumbnail.svg",
+          "duration": "03:00",
           "activities": [
             "Watch: 'Why English is useful for your work' (short video)",
             "Learn 10 market English words",
@@ -126,6 +128,8 @@
             ], "answerId": "B", "passThreshold": 70 },
             { "id": "meg-2-audio", "type": "submission", "submissionType": "audio", "question": "Record yourself saying 'Hello, how can I help you?'" }
           ],
+          "thumbnailUrl": "/media/meg/week2/thumbnail.svg",
+          "duration": "02:30",
           "quizDeadline": "End of Week 2 (Sunday)"
         },
         {
@@ -144,6 +148,8 @@
           "exercises": [
             { "id": "meg-3-quiz", "type": "fill", "question": "Fill the blank: 'My name ___ John.'", "answer": "is" }
           ],
+          "thumbnailUrl": "/media/meg/week3/thumbnail.svg",
+          "duration": "02:15",
           "quizDeadline": "End of Week 3 (Sunday)"
         },
         {
@@ -168,6 +174,8 @@
               { "id": "D", "text": "Sit down" }
             ], "answerId": "B", "passThreshold": 70 }
           ],
+          "thumbnailUrl": "/media/meg/week4/thumbnail.svg",
+          "duration": "03:20",
           "quizDeadline": "End of Week 4 (Sunday)"
         },
         {
@@ -191,6 +199,8 @@
               { "id": "D", "text": "Why" }
             ], "answerId": "C", "passThreshold": 70 }
           ],
+          "thumbnailUrl": "/media/meg/week5/thumbnail.svg",
+          "duration": "02:40",
           "quizDeadline": "End of Week 5 (Sunday)"
         },
         {
@@ -214,6 +224,8 @@
               { "id": "D", "text": "Shut up" }
             ], "answerId": "B", "passThreshold": 70 }
           ],
+          "thumbnailUrl": "/media/meg/week6/thumbnail.svg",
+          "duration": "02:10",
           "quizDeadline": "End of Week 6 (Sunday)"
         },
         {
@@ -232,6 +244,8 @@
           "exercises": [
             { "id": "meg-7-quiz", "type": "submission", "submissionType": "audio", "question": "Record a short role-play of a seller and buyer (audio)." }
           ],
+          "thumbnailUrl": "/media/meg/week7/thumbnail.svg",
+          "duration": "03:00",
           "quizDeadline": "End of Week 7 (Sunday)"
         },
         {
@@ -255,6 +269,8 @@
               { "id": "D", "text": "Stop" }
             ], "answerId": "B", "passThreshold": 70 }
           ],
+          "thumbnailUrl": "/media/meg/week8/thumbnail.svg",
+          "duration": "02:20",
           "quizDeadline": "End of Week 8 (Sunday)"
         },
         {
@@ -278,6 +294,8 @@
               { "id": "D", "text": "Goodbye" }
             ], "answerId": "B", "passThreshold": 70 }
           ],
+          "thumbnailUrl": "/media/meg/week9/thumbnail.svg",
+          "duration": "02:50",
           "quizDeadline": "End of Week 9 (Sunday)"
         },
         {
@@ -302,6 +320,8 @@
               { "id": "D", "text": "Turning away" }
             ], "answerId": "B", "passThreshold": 70 }
           ],
+          "thumbnailUrl": "/media/meg/week10/thumbnail.svg",
+          "duration": "03:30",
           "quizDeadline": "End of Week 10 (Sunday)"
         },
         {
@@ -313,10 +333,16 @@
             "Watch peer videos and vote for best greeting",
             "Group challenge: write a mini dialogue"
           ],
-          "phrases": [],
+          "phrases": [
+            { "phrase": "Let's practice a dialogue", "translation": "Pratiquons un dialogue", "phonetic": "Let's practice a dialogue" },
+            { "phrase": "Can you repeat that?", "translation": "Pouvez-vous répéter?", "phonetic": "Can you repeat that?" },
+            { "phrase": "Try saying it again more slowly", "translation": "Essayez de le dire plus lentement", "phonetic": "Try saying it again more slowly" }
+          ],
           "exercises": [
             { "id": "meg-11-quiz", "type": "comprehensive", "question": "Complete the comprehensive review quiz and submit a short dialogue.", "passThreshold": 70 }
           ],
+          "thumbnailUrl": "/media/meg/week11/thumbnail.svg",
+          "duration": "03:10",
           "quizDeadline": "End of Week 11 (Sunday)"
         },
         {
@@ -329,10 +355,16 @@
             "Short final group chat in English",
             "Award celebration badge or certificate"
           ],
-          "phrases": [],
+          "phrases": [
+            { "phrase": "Well done!", "translation": "Bravo!", "phonetic": "Well done" },
+            { "phrase": "You did great", "translation": "Vous avez très bien fait", "phonetic": "You did great" },
+            { "phrase": "Congratulations", "translation": "Félicitations", "phonetic": "Congratulations" }
+          ],
           "exercises": [
             { "id": "meg-12-final", "type": "final", "submissionType": "audio|video", "question": "Submit final audio/video greeting and complete feedback form." }
           ],
+          "thumbnailUrl": "/media/meg/week12/thumbnail.svg",
+          "duration": "04:00",
           "quizDeadline": "End of Week 12 (Sunday)"
         }
       ]
