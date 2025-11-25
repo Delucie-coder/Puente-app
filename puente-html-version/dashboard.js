@@ -1,12 +1,62 @@
 // Dashboard skeleton script — cleared for redesign
+const PUENTE_ASSET_VERSION = 'v2';
+
+// If the page is loaded with ?hide_lessons=1 (used by admin embed), remove
+// the Lessons section and everything after it in the main canvas so the
+// embedded admin view only shows the top KPIs and header.
+(function(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const removeFn = ()=>{
+      try{
+        if (params.get('hide_lessons')){
+          const lessons = document.getElementById('lessonsSection');
+          if (lessons){
+            // remove lessons and all following siblings until we hit the right-column aside
+            let node = lessons;
+            while(node){
+              const next = node.nextElementSibling;
+              node.remove();
+              if (!next) break;
+              if (next.tagName === 'ASIDE' || (next.classList && next.classList.contains && next.classList.contains('right-column'))) break;
+              node = next;
+            }
+          }
+        }
+        if (params.get('hide_right')){
+          // Remove the right column which contains calendar, upcoming, and notice board
+          const right = document.querySelector('.right-column');
+          if (right) right.remove();
+        }
+      }catch(e){ /* ignore removal errors */ }
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', removeFn); else removeFn();
+  }catch(e){/* ignore URL parsing */}
+})();
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('Dashboard skeleton loaded — redesign in progress');
+  console.log('Dashboard loaded — redesign in progress', PUENTE_ASSET_VERSION);
   const app = document.getElementById('app');
   if (app) {
     const info = document.createElement('div');
     info.className = 'card';
     info.innerHTML = '<p>New dashboard skeleton. Implement components and wiring here.</p>';
     app.appendChild(info);
+  }
+
+  // Select a week number for a lesson and sync UI across all lists
+  function selectWeek(lesson, weekNum){
+    try{
+      const program = assemble12Weeks(lesson || {});
+      const wobj = (program||[]).find(x=> (x.week||x.weekNumber) === Number(weekNum)) || { week: Number(weekNum), title: `Week ${weekNum}` };
+      // highlight sidebar list
+      const wl = document.getElementById('weekList'); if (wl){ wl.querySelectorAll('.week-item').forEach(n=> n.classList.remove('selected')); const leftSel = wl.querySelector(`[data-week="${weekNum}"]`); if (leftSel) leftSel.classList.add('selected'); }
+      // highlight rail list
+      const rail = document.getElementById('railWeekList'); if (rail){ rail.querySelectorAll('.rail-week-item').forEach(n=> n.classList.remove('selected')); const rSel = rail.querySelector(`[data-week="${weekNum}"]`); if (rSel) rSel.classList.add('selected'); }
+      // highlight main duplicate
+      const mainDup = document.getElementById('weekListMainInner'); if (mainDup){ mainDup.querySelectorAll('.mini-week').forEach(n=> n.classList.remove('selected')); const mSel = mainDup.querySelector(`[data-week="${weekNum}"]`); if (mSel) mSel.classList.add('selected'); }
+      // show the week detail
+      showWeek(lesson || {}, wobj);
+    }catch(e){ console.warn('selectWeek', e); }
   }
 });
 
@@ -22,6 +72,18 @@ function openLesson(id){
   // cached lessons list from server
   let cachedLessons = [];
   const DEBUG_LOG = true; // toggle detailed console logs
+  // API_BASE logic:
+  // - when served by Live Server (port 5500) use the legacy mock server at 3010
+  // - when opened via file:// or from a different host, default to the local mock server on 3001
+  // - when served from localhost (any port) prefer same-origin (empty string)
+  let API_BASE = '';
+  try{
+    if (window.location.port === '5500') API_BASE = 'http://localhost:3010';
+    else if (window.location.protocol === 'file:') API_BASE = 'http://localhost:3001';
+    else if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') API_BASE = 'http://localhost:3001';
+    else API_BASE = '';
+  }catch(e){ API_BASE = 'http://localhost:3001'; }
+  if (DEBUG_LOG) console.debug('API_BASE set to', API_BASE);
 
   function setActiveRail(activeId){
     railIds.forEach(id=>{ const el = rb(id); if (!el) return; if (id===activeId){ el.classList.add('active'); el.setAttribute('aria-pressed','true'); } else { el.classList.remove('active'); el.setAttribute('aria-pressed','false'); } });
@@ -69,7 +131,7 @@ function openLesson(id){
   // Load lessons from server (fallback to sample)
   async function fetchLessons(){
     try{
-      const r = await fetch('/api/lessons'); if (r.ok){ const j=await r.json(); cachedLessons = j.lessons||[]; if (DEBUG_LOG) console.debug('fetchLessons: loaded', cachedLessons.length, 'lessons', cachedLessons.map(x=>x.id)); return cachedLessons; }
+      const r = await fetch(`${API_BASE}/api/lessons`); if (r.ok){ const j=await r.json(); cachedLessons = j.lessons||[]; if (DEBUG_LOG) console.debug('fetchLessons: loaded', cachedLessons.length, 'lessons', cachedLessons.map(x=>x.id)); return cachedLessons; }
     }catch(e){ /* ignore */ }
     // sample fallback
     if (DEBUG_LOG) console.debug('fetchLessons: using fallback sample lessons');
@@ -157,92 +219,99 @@ function openLesson(id){
     });
   }
 
+  // Render left course sidebar with 12 weeks and grades toggle
+  function renderWeekSidebar(lesson, weeks){
+    try{
+      const container = document.getElementById('weekList'); if (!container) return;
+      container.innerHTML = '';
+      const lessonId = lesson && lesson.id;
+      // We'll render three synchronized representations:
+      // - the main left course sidebar (`#weekList`) — `container`
+      // - a compact left-rail list (`#railWeekList`) for narrow rail display
+      // - a quick duplicate in the main canvas (`#weekListMainInner`) for visibility
+      const railContainer = document.getElementById('railWeekList');
+      const mainDuplicate = document.getElementById('weekListMainInner');
+      if (railContainer) railContainer.innerHTML = '';
+      if (mainDuplicate) mainDuplicate.innerHTML = '';
+      for (let i=0;i<12;i++){
+        const w = weeks[i] || { week: i+1, title: `Week ${i+1}` };
+        const weekNumStr = String(w.week || (i+1));
+        const progress = loadProgress(lessonId, w.week || (i+1)) || {};
+        const isDone = progress && typeof progress.bestScore === 'number' && progress.bestScore >= (w.passThreshold||70);
+
+        // Sidebar full item
+        const wk = document.createElement('button'); wk.className = 'week-item'; wk.type='button'; wk.dataset.week = weekNumStr;
+        if (isDone) wk.classList.add('done');
+        const check = document.createElement('div'); check.className = 'check'; check.setAttribute('aria-hidden','true'); check.innerHTML = isDone? '✓' : '';
+        const title = document.createElement('div'); title.className = 'title'; title.innerHTML = `<div class="week-num">Week ${weekNumStr}</div><div class="muted" style="font-size:13px">${escapeHTML(w.title||'')}</div>`;
+        wk.appendChild(check); wk.appendChild(title);
+        wk.addEventListener('click', ()=> selectWeek(lesson, Number(weekNumStr)));
+        container.appendChild(wk);
+
+        // Compact rail item (small square showing week number)
+        if (railContainer){
+          const rw = document.createElement('button'); rw.className = 'rail-week-item'; rw.type='button'; rw.dataset.week = weekNumStr; rw.title = `Week ${weekNumStr}`; rw.textContent = String(weekNumStr);
+          if (isDone) rw.classList.add('done');
+          rw.addEventListener('click', ()=> selectWeek(lesson, Number(weekNumStr)));
+          railContainer.appendChild(rw);
+        }
+
+        // Main area duplicate (mini buttons)
+        if (mainDuplicate){
+          const mw = document.createElement('button'); mw.className = 'mini-week'; mw.type='button'; mw.dataset.week = weekNumStr; mw.textContent = `W${weekNumStr}`;
+          if (isDone) mw.classList.add('done');
+          mw.addEventListener('click', ()=> selectWeek(lesson, Number(weekNumStr)));
+          mainDuplicate.appendChild(mw);
+        }
+      }
+      // wire grades toggle
+      const toggle = document.getElementById('toggleGrades'); const grades = document.getElementById('gradesSection');
+      if (toggle && grades){ toggle.addEventListener('click', ()=>{ const expanded = toggle.getAttribute('aria-expanded') === 'true'; toggle.setAttribute('aria-expanded', String(!expanded)); grades.style.display = expanded? 'none' : ''; }); }
+    }catch(e){ console.warn('renderWeekSidebar failed', e); }
+  }
+
+  // Helper: escape text for safe HTML insertion
+  function escapeHTML(s){
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
   // Show the lesson weeks in the UI (renders the program-week-grid)
-  function showLesson(lesson){
+  async function showLesson(lesson){
     if (!lesson) return;
+    // If the lesson object is just metadata (no weeks), try to fetch the full lesson
+    // so the UI can render real week content instead of placeholders.
+    try{
+      if ((!lesson.weeks || lesson.weeks.length === 0) && lesson.id){
+        const resp = await fetch(`${API_BASE}/api/lesson/${encodeURIComponent(lesson.id)}`);
+        if (resp && resp.ok){
+          const data = await resp.json();
+          const fullLesson = data && data.lesson ? data.lesson : data;
+          if (fullLesson && fullLesson.id){
+            // replace the local reference with the fetched full lesson
+            lesson = fullLesson;
+            // update cachedLessons so subsequent operations can find full weeks
+            try{ cachedLessons = cachedLessons || []; const idx = cachedLessons.findIndex(x=> x && x.id === lesson.id); if (idx >= 0) cachedLessons[idx] = lesson; else cachedLessons.push(lesson); }catch(e){}
+          }
+        }
+      }
+    }catch(e){ /* ignore fetch errors and continue with available lesson data */ }
     const title = document.getElementById('title'); if (title) title.textContent = lesson.title || 'Lesson';
-    const weeksSection = document.getElementById('weeksSection'); const weeksGrid = document.getElementById('weeksGrid'); const weeksTitle = document.getElementById('weeksTitle');
+    const weeksSection = document.getElementById('weeksSection'); const weeksGrid = document.getElementById('weeksGrid'); const weekList = document.getElementById('weekList'); const weeksTitle = document.getElementById('weeksTitle');
     const weekDetail = document.getElementById('weekDetail'); if (weekDetail) { weekDetail.style.display='none'; weekDetail.innerHTML=''; }
-    if (!weeksSection || !weeksGrid) return;
+    if (!weeksSection) return;
     // reveal with animation
     weeksSection.style.display = '';
     // small delay to allow transition from display change
     requestAnimationFrame(()=> weeksSection.classList.add('open'));
     weeksTitle.textContent = lesson.title + ' — Program weeks';
-    weeksGrid.innerHTML = '';
+    if (weeksGrid) weeksGrid.innerHTML = '';
     // assemble a full 12-weeks program when possible
     const weeks = assemble12Weeks(lesson);
-    // create tiles (and mark as fade-in to animate entry)
-      const programWeeks = weeks; // keep reference for click handlers
-      weeks.forEach((w, idx) => {
-        const tile = document.createElement('button');
-        tile.className = 'program-week-tile card fade-in';
-        tile.setAttribute('type','button');
-        tile.setAttribute('role','listitem');
-        tile.setAttribute('tabindex','0');
-        tile.setAttribute('aria-selected','false');
-        const wn = w.week || (w.weekNumber|| (idx+1));
-        tile.dataset.week = String(wn);
-        // show thumbnail and duration if available
-        const thumbHtml = w.thumbnailUrl? `<div style="height:78px;margin-bottom:8px;border-radius:8px;overflow:hidden"><img src="${w.thumbnailUrl}" alt="Week ${wn} thumbnail" style="width:100%;height:100%;object-fit:cover"></div>` : '';
-        const durHtml = w.duration? `<div class="muted" style="font-size:12px;margin-bottom:6px">${w.duration}</div>` : '';
-        tile.innerHTML = `
-          ${thumbHtml}
-          ${durHtml}
-          <div class="program-week-number">Week ${wn}</div>
-          <div class="program-week-title">${w.title||''}</div>
-          <div class="program-week-progress" aria-hidden="true"><div class="bar"></div></div>
-          <div class="prog-meta"><span class="program-week-score"><span class="prog-percent">-</span></span><span class="program-week-tick pending" aria-hidden="true">•</span></div>
-        `;
-        tile.addEventListener('click', async ()=>{
-          try{
-            const clickedWeekNum = Number(tile.dataset.week);
-            // try to find the week object in the assembled program
-            let weekObj = (programWeeks || []).find(w => Number((w && (w.week || w.weekNumber)) || 0) === clickedWeekNum);
-            // if not present, attempt to fetch the week from the server endpoint
-            if (!weekObj && lesson && lesson.id){
-              try{
-                const resp = await fetch(`/api/lesson/${encodeURIComponent(lesson.id)}/week/${encodeURIComponent(String(clickedWeekNum))}`);
-                if (resp.ok) weekObj = await resp.json();
-              }catch(e){ /* ignore fetch errors and fall back to placeholder */ }
-            }
-            if (!weekObj) weekObj = { week: clickedWeekNum, title: `Week ${clickedWeekNum}` };
-            if (DEBUG_LOG) console.debug('tile.click -> showWeek', { lessonId: lesson.id, weekNum: clickedWeekNum, weekObj });
-            showWeek(lesson, weekObj);
-            // Apply visual selection to the clicked tile
-            setTimeout(()=>{
-              try{
-                const weeksGrid = document.getElementById('weeksGrid'); if (!weeksGrid) return;
-                const tiles = weeksGrid.querySelectorAll('.program-week-tile'); tiles.forEach(t=> t.classList.remove('selected'));
-                tile.classList.add('selected');
-                // update aria-selected attributes
-                tiles.forEach(t=> t.setAttribute('aria-selected','false'));
-                tile.setAttribute('aria-selected','true');
-                // persist clicked week selection
-                if (lesson && lesson.id) localStorage.setItem('puente_selectedLesson', lesson.id);
-                localStorage.setItem('puente_selectedWeek', String(clickedWeekNum));
-              }catch(e){/* ignore */}
-            }, 60);
-          }catch(err){ console.error('tile click handler error', err); }
-        });
-        tile.addEventListener('keydown', (ev)=>{
-          // Enter or Space opens
-          if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); tile.click(); }
-        });
-        weeksGrid.appendChild(tile);
-        // initialize tile progress from saved state if present
-        try{
-          const saved = loadProgress(lesson.id, wn);
-          if (saved && typeof saved.bestScore === 'number'){
-            updateTileProgress(lesson.id, wn, saved.bestScore, (saved.bestScore||0) >= (saved.passThreshold||70));
-          }
-        }catch(e){}
-        // stagger fade-in
-        setTimeout(()=> tile.classList.remove('fade-in'), 40 * idx);
-      });
-
-      // enable keyboard navigation for the weeks grid
-      setupWeekGridKeyboard(weeksGrid);
+    // populate the left Course Material sidebar
+    try{ renderWeekSidebar(lesson, weeks); }catch(e){}
+    // ensure duplicates are visible (rail and main quick list)
+    try{ const rail = document.getElementById('railWeekList'); if (rail) rail.setAttribute('aria-hidden','false'); const mainDupWrap = document.getElementById('weekListMain'); if (mainDupWrap) mainDupWrap.style.display = ''; }catch(e){}
+    // Duplicate tile grid removed — using the left-hand Course Material week list as primary navigation
 
       // auto-open first week (if no prior selection) so users see the video & activities when they click Open
       try{
@@ -253,30 +322,38 @@ function openLesson(id){
         }
       }catch(e){/* ignore */}
 
+    // fetch pass-threshold for this lesson and display its source
+    try{
+      const passEl = document.getElementById('passThreshold');
+      const srcEl = document.getElementById('thresholdSource');
+      if (lesson && lesson.id && (passEl || srcEl)){
+        fetch(`${API_BASE}/api/settings?lessonId=${encodeURIComponent(lesson.id)}`).then(r=> r.ok? r.json() : null).then(j=>{
+          if (!j) return;
+          try{ if (passEl) passEl.textContent = (typeof j.passThreshold === 'number')? (String(j.passThreshold) + '%') : String(j.passThreshold||'-'); }catch(e){}
+          try{ if (srcEl) srcEl.textContent = 'source: ' + (j.source || 'default'); }catch(e){}
+        }).catch(()=>{/* ignore */});
+      }
+    }catch(e){/* ignore */}
+
     // fetch per-week progress and update tiles (non-blocking)
     const lessonId = lesson.id;
     weeks.forEach((w)=>{
       const wn = w.week || w.weekNumber || null; if (!wn) return;
-      fetch(`/api/progress/summary?lessonId=${encodeURIComponent(lessonId||'')}&week=${encodeURIComponent(wn)}`)
+      fetch(`${API_BASE}/api/progress/summary?lessonId=${encodeURIComponent(lessonId||'')}&week=${encodeURIComponent(wn)}`)
         .then(r => r.ok? r.json() : null).then(data => {
           const selector = `[data-week="${wn}"]`;
-          const tile = weeksGrid.querySelector(selector);
-          if (!tile || !data) return;
-          const percentEl = tile.querySelector('.prog-percent');
-          const tickEl = tile.querySelector('.program-week-tick');
-            const barEl = tile.querySelector('.program-week-progress .bar');
+          const sidebar = document.getElementById('weekList');
+          const item = sidebar? sidebar.querySelector(selector) : null;
+          if (!item || !data) return;
+          const checkEl = item.querySelector('.check');
           if (typeof data.bestScore === 'number'){
             const pct = Math.round(data.bestScore);
-            if (percentEl) percentEl.textContent = pct + '%';
-              if (barEl) barEl.style.width = pct + '%';
-            if (typeof data.passThreshold === 'number' && pct >= data.passThreshold){
-              tickEl && tickEl.classList.remove('pending'); tickEl && tickEl.classList.add('done'); tickEl && (tickEl.textContent='✓');
-            } else {
-              tickEl && tickEl.classList.remove('done'); tickEl && tickEl.classList.add('pending'); tickEl && (tickEl.textContent='•');
-            }
+            const passed = typeof data.passThreshold === 'number' ? pct >= data.passThreshold : pct >= 70;
+            if (passed){ item.classList.add('done'); if (checkEl) checkEl.innerHTML = '✓'; }
+            else { item.classList.remove('done'); if (checkEl) checkEl.innerHTML = ''; }
           } else if (data && data.attemptsCount){
-            if (percentEl) percentEl.textContent = (data.attemptsCount||0) + ' attempts';
-              if (barEl) barEl.style.width = '10%';
+            // mark with light indicator when attempts exist
+            if (checkEl) checkEl.innerHTML = (data.attemptsCount||0) > 0 ? '•' : '';
           }
         }).catch(()=>{});
     });
@@ -285,96 +362,90 @@ function openLesson(id){
     computeKPIs(lesson.id);
   }
 
-    // Keyboard navigation: arrow keys move focus between tiles inside weeksGrid
-    function setupWeekGridKeyboard(weeksGrid){
-      if (!weeksGrid) return;
-      weeksGrid.setAttribute('role','list');
-      weeksGrid.addEventListener('keydown', (e)=>{
-        const keys = ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'];
-        if (!keys.includes(e.key)) return;
-        const focusable = Array.from(weeksGrid.querySelectorAll('.program-week-tile'));
-        if (!focusable.length) return;
-        const idx = focusable.indexOf(document.activeElement);
-        let next = idx;
-        const cols = Math.max(1, Math.floor(weeksGrid.clientWidth / 140)); // rough columns
-        if (e.key === 'ArrowRight') next = Math.min(focusable.length-1, idx + 1);
-        if (e.key === 'ArrowLeft') next = Math.max(0, idx - 1);
-        if (e.key === 'ArrowDown') next = Math.min(focusable.length-1, idx + cols);
-        if (e.key === 'ArrowUp') next = Math.max(0, idx - cols);
-        if (e.key === 'Home') next = 0;
-        if (e.key === 'End') next = focusable.length-1;
-        if (next !== idx){ e.preventDefault(); focusable[next].focus(); }
-      });
-      // also manage aria-selected on focus
-      weeksGrid.addEventListener('focusin', (e)=>{
-        const tile = e.target.closest('.program-week-tile'); if (!tile) return;
-        const others = weeksGrid.querySelectorAll('.program-week-tile'); others.forEach(t=> t.setAttribute('aria-selected','false'));
-        tile.setAttribute('aria-selected','true');
-      });
-    }
+    // Keyboard navigation for the old grid was removed when using the left sidebar as primary navigation.
 
   // Show a single week's detail (phrases/exercises)
   function showWeek(lesson, week){
     const weekDetail = document.getElementById('weekDetail'); if (!weekDetail) return;
     if (DEBUG_LOG) console.debug('showWeek called', { lessonId: lesson && lesson.id, week });
     weekDetail.style.display = '';
-    const role = sessionStorage.getItem('puente_role')||'';
-    const lines = [];
-    lines.push(`<h4>${week.title || ('Week ' + (week.week||''))}</h4>`);
-    // phrases
+    // Build a consistent layout: Video area -> Activities -> Phrases -> Exercises
+    const title = escapeHTML(week.title || (`Week ${week.week || week.weekNumber || ''}`));
+    // Video area (prefer youtubeUrl -> videoUrl -> placeholder)
+    let videoHtml = '';
+    const yt = week.youtubeUrl || '';
+    if (yt && /youtube\.com|youtu\.be/i.test(yt)){
+      try{
+        const link = (new URL(yt, window.location.href)).toString();
+        videoHtml = `
+          <div class="youtube-card" style="border-radius:8px;background:#000;color:#fff;padding:10px;display:flex;align-items:center;gap:12px">
+            <a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;width:100%">
+              <div style="width:72px;height:72px;border-radius:8px;background:#111;display:flex;align-items:center;justify-content:center;font-size:30px">▶</div>
+              <div style="flex:1;text-align:left">
+                <div style="font-weight:600">Watch on YouTube</div>
+                <div class="muted small" style="opacity:0.9">Opens on YouTube in a new tab</div>
+              </div>
+            </a>
+          </div>
+        `;
+      }catch(e){
+        videoHtml = `<div><a href="${escapeHTML(yt)}" target="_blank" rel="noopener noreferrer" class="btn link-btn">Open video</a></div>`;
+      }
+    } else if (week.videoUrl){
+      const v = week.videoUrl;
+      if (/\.(mp4|webm|ogg)(\?|$)/i.test(v)){
+        videoHtml = `<video controls preload="metadata" class="week-video" style="width:100%;max-height:360px;border-radius:8px;background:#000"><source src="${escapeHTML(v)}"></video>`;
+      } else if (/youtube\.com|youtu\.be/i.test(v)){
+        try{
+          const link = (new URL(v, window.location.href)).toString();
+          videoHtml = `<div class="youtube-card" style="border-radius:8px;background:#000;color:#fff;padding:10px;display:flex;align-items:center;gap:12px"><a href="${escapeHTML(link)}" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;width:100%"><div style="width:72px;height:72px;border-radius:8px;background:#111;display:flex;align-items:center;justify-content:center;font-size:30px">▶</div><div style="flex:1;text-align:left"><div style="font-weight:600">Watch on YouTube</div><div class="muted small" style="opacity:0.9">Opens on YouTube in a new tab</div></div></a></div>`;
+        }catch(e){ videoHtml = `<div><a href="${escapeHTML(v)}" target="_blank" rel="noopener noreferrer" class="btn link-btn">Open video</a></div>`; }
+      } else {
+        videoHtml = `<div><a href="${escapeHTML(v)}" target="_blank" class="btn link-btn">Open video</a></div>`;
+      }
+    } else {
+      videoHtml = `<div class="video-placeholder" style="padding:28px;border-radius:8px;background:#f7f7f8;text-align:center;color:var(--muted)">No video for this week</div>`;
+    }
+
+    // Activities list
+    let activitiesHtml = '';
+    if (Array.isArray(week.activities) && week.activities.length){
+      activitiesHtml = `<div class="week-activities"><strong>Activities</strong><ul>${week.activities.map(a=>`<li>${escapeHTML(a)}</li>`).join('')}</ul></div>`;
+    } else {
+      activitiesHtml = `<div class="week-activities muted small">No activities listed for this week.</div>`;
+    }
+
+    // Phrases
+    let phrasesHtml = '';
     if (week.phrases){
       const p = week.phrases;
       if (typeof p === 'object' && (p.vendor || p.moto)){
-        lines.push(`<strong>Phrases (${role || 'all'})</strong>`);
+        const role = sessionStorage.getItem('puente_role')||'';
         const list = (role && p[role])? p[role] : (p.vendor||[]).concat(p.moto||[]);
-        lines.push('<ul>');
-        (list||[]).forEach(ph => { lines.push(`<li><strong>${ph.phrase}</strong> — <span class="muted">${ph.translation||''} ${ph.phonetic? ' — '+ph.phonetic:''}</span></li>`); });
-        lines.push('</ul>');
+        phrasesHtml = `<div><strong>Phrases (${escapeHTML(role||'all')})</strong><ul>${(list||[]).map(ph=>`<li><strong>${escapeHTML(ph.phrase)}</strong> — <span class="muted">${escapeHTML(ph.translation||'')} ${ph.phonetic? ' — '+escapeHTML(ph.phonetic):''}</span></li>`).join('')}</ul></div>`;
       } else if (Array.isArray(week.phrases)){
-        lines.push('<strong>Phrases</strong><ul>');
-        week.phrases.forEach(ph=> lines.push(`<li><strong>${ph.phrase}</strong> — <span class="muted">${ph.translation||''}</span></li>`));
-        lines.push('</ul>');
+        phrasesHtml = `<div><strong>Phrases</strong><ul>${week.phrases.map(ph=>`<li><strong>${escapeHTML(ph.phrase)}</strong> — <span class="muted">${escapeHTML(ph.translation||'')}</span></li>`).join('')}</ul></div>`;
       }
-    }
-    // exercises (interactive for mcq)
-    if (week.exercises && Array.isArray(week.exercises)){
-      lines.push('<strong>Exercises</strong>');
-      // placeholder container to be filled after DOM insertion
-      lines.push('<div id="exercisesContainer"></div>');
-    }
-    // media links
-    // media: embed video when possible, else show links
-    if (week.videoUrl || week.audioUrl){
-      lines.push('<div class="mt-1 media-block">');
-      if (week.videoUrl){
-        const v = week.videoUrl;
-        // simple heuristics: embed <video> for direct mp4/webm, iframe for youtube, else link
-        if (/\.(mp4|webm|ogg)(\?|$)/i.test(v)){
-          lines.push(`<video controls preload="metadata" style="width:100%;max-height:360px;border-radius:8px;background:#000"><source src="${v}"></video>`);
-        } else if (/youtube\.com|youtu\.be/i.test(v)){
-          // convert to embed URL when possible
-          let embed = v;
-          try{
-            const u = new URL(v, window.location.href);
-            if (u.hostname.includes('youtu')){
-              const vid = u.searchParams.get('v') || (u.pathname ? u.pathname.split('/').pop() : '');
-              if (vid) embed = `https://www.youtube.com/embed/${vid}`;
-            }
-          }catch(e){}
-          lines.push(`<div style="position:relative;padding-top:56.25%"><iframe src="${embed}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border-radius:8px"></iframe></div>`);
-        } else {
-          lines.push(`<div><a href="${v}" target="_blank" class="btn link-btn">Open video</a></div>`);
-        }
-      }
-      if (week.audioUrl) lines.push(`<div style="margin-top:8px"><audio controls src="${week.audioUrl}">Your browser does not support audio.</audio></div>`);
-      lines.push('</div>');
     }
 
-    if (lines.length === 0) {
-      weekDetail.innerHTML = '<p class="muted">No content available for this week.</p>';
-    } else {
-      weekDetail.innerHTML = lines.join('');
-    }
+    // Exercises container (to be filled by renderExercises)
+    const exercisesContainerHtml = (week.exercises && Array.isArray(week.exercises)) ? '<div><strong>Exercises</strong><div id="exercisesContainer"></div></div>' : '';
+
+    // Audio (if present) shown under video
+    const audioHtml = week.audioUrl ? `<div style="margin-top:8px"><audio controls src="${escapeHTML(week.audioUrl)}">Your browser does not support audio.</audio></div>` : '';
+
+    weekDetail.innerHTML = `
+      <div class="week-detail-root">
+        <h4>${title}</h4>
+        <div class="week-media">${videoHtml}${audioHtml}</div>
+        <div class="week-body" style="margin-top:12px">
+          ${activitiesHtml}
+          ${phrasesHtml}
+          ${exercisesContainerHtml}
+        </div>
+      </div>
+    `;
+
     // after insertion, render interactive exercises
     try{
       const exWrap = weekDetail.querySelector('#exercisesContainer');
@@ -382,15 +453,27 @@ function openLesson(id){
         renderExercises(week.exercises, lesson, week, exWrap);
       }
     }catch(e){ console.warn('renderExercises failed', e); }
+
+    // Visible debug dump of the week object for troubleshooting (collapsible)
+    try{
+      const dbgWrap = document.createElement('details'); dbgWrap.className = 'card debug-week-json'; dbgWrap.style.marginTop = '10px';
+      dbgWrap.innerHTML = `<summary class="muted small">Debug: week object (click to expand)</summary><pre style="white-space:pre-wrap;max-height:260px;overflow:auto;margin-top:8px">${escapeHTML(JSON.stringify(week,null,2))}</pre>`;
+      weekDetail.appendChild(dbgWrap);
+    }catch(e){ console.debug('append debug dump failed', e); }
+
     weekDetail.scrollIntoView({behavior:'smooth'});
-    // highlight selected tile
+
+    // highlight selected tile and persist selection
     try{
       const weeksGrid = document.getElementById('weeksGrid'); if (weeksGrid){
         const tiles = weeksGrid.querySelectorAll('.program-week-tile'); tiles.forEach(t=> t.classList.remove('selected'));
         const sel = weeksGrid.querySelector(`[data-week="${week.week||week.weekNumber}"]`);
         if (sel) sel.classList.add('selected');
       }
-      // persist selection
+      // also highlight the left sidebar week list
+      try{
+        const wl = document.getElementById('weekList'); if (wl){ wl.querySelectorAll('.week-item').forEach(i=> i.classList.remove('selected')); const leftSel = wl.querySelector(`[data-week="${week.week||week.weekNumber}"]`); if (leftSel) leftSel.classList.add('selected'); }
+      }catch(e){}
       if (lesson && lesson.id) localStorage.setItem('puente_selectedLesson', lesson.id);
       if (week && (week.week || week.weekNumber)) localStorage.setItem('puente_selectedWeek', String(week.week || week.weekNumber));
     }catch(e){/* ignore persist errors */}
@@ -401,12 +484,33 @@ function openLesson(id){
   function loadProgress(lessonId, weekNum){ try{ const s = localStorage.getItem(progressKey(lessonId,weekNum)); return s? JSON.parse(s) : null; }catch(e){ return null; } }
   function saveProgress(lessonId, weekNum, data){ try{ localStorage.setItem(progressKey(lessonId,weekNum), JSON.stringify(data)); }catch(e){}
     // try to POST to server progress endpoint if available (best-effort)
-    try{ fetch('/api/progress', { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ lessonId, week: weekNum, progress: data }) }).catch(()=>{}); }catch(e){}
+    try{ fetch(`${API_BASE}/api/progress`, { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ lessonId, week: weekNum, progress: data }) }).catch(()=>{}); }catch(e){}
+    // update left sidebar check mark if present
+    try{
+      const wl = document.getElementById('weekList'); if (wl){ const it = wl.querySelector(`[data-week="${weekNum}"]`); if (it){ const chk = it.querySelector('.check'); const passed = typeof data.bestScore === 'number' && (data.bestScore >= (data.passThreshold||70)); if (passed){ it.classList.add('done'); if (chk) chk.innerHTML = '✓'; } else { it.classList.remove('done'); if (chk) chk.innerHTML = ''; } } }
+      // also update compact rail list and main duplicate if present
+      try{ const rail = document.getElementById('railWeekList'); if (rail){ const r = rail.querySelector(`[data-week="${weekNum}"]`); if (r){ const passed = typeof data.bestScore === 'number' && (data.bestScore >= (data.passThreshold||70)); if (passed){ r.classList.add('done'); if (r.tagName === 'BUTTON') r.textContent = String(weekNum); } else { r.classList.remove('done'); } } } }catch(e){}
+      try{ const mainDup = document.getElementById('weekListMainInner'); if (mainDup){ const m = mainDup.querySelector(`[data-week="${weekNum}"]`); if (m){ const passed = typeof data.bestScore === 'number' && (data.bestScore >= (data.passThreshold||70)); if (passed) m.classList.add('done'); else m.classList.remove('done'); } } }catch(e){}
+    }catch(e){}
   }
 
   // update tile visuals (progress bar and tick)
   function updateTileProgress(lessonId, weekNum, percent, passed){
     try{
+      // Prefer updating the left sidebar week item, fallback to the (now unused) weeksGrid
+      const weekList = document.getElementById('weekList');
+      if (weekList){
+        const item = weekList.querySelector(`[data-week="${weekNum}"]`);
+        if (item){
+          const chk = item.querySelector('.check');
+          if (passed){ item.classList.add('done'); if (chk) chk.innerHTML = '✓'; }
+          else { item.classList.remove('done'); if (chk) chk.innerHTML = ''; }
+          // also update compact rail and main duplicate if present
+          try{ const rail = document.getElementById('railWeekList'); if (rail){ const r = rail.querySelector(`[data-week="${weekNum}"]`); if (r){ if (passed){ r.classList.add('done'); r.classList.remove('selected'); r.textContent = String(weekNum); } else { r.classList.remove('done'); } } } }catch(e){}
+          try{ const mainDup = document.getElementById('weekListMainInner'); if (mainDup){ const m = mainDup.querySelector(`[data-week="${weekNum}"]`); if (m){ if (passed){ m.classList.add('done'); } else { m.classList.remove('done'); } } } }catch(e){}
+          return;
+        }
+      }
       const weeksGrid = document.getElementById('weeksGrid'); if (!weeksGrid) return;
       const tile = weeksGrid.querySelector(`[data-week="${weekNum}"]`);
       if (!tile) return;
@@ -487,7 +591,7 @@ function openLesson(id){
               else if (!isNaN(Number(v))) answersArr.push(Number(v));
               else answersArr.push(String(v));
             });
-            fetch('/api/attempts', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ lessonId: lessonId, week: weekNum, answers: answersArr }) })
+            fetch(`${API_BASE}/api/attempts`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ lessonId: lessonId, week: weekNum, answers: answersArr }) })
               .then(r => r.ok? r.json().catch(()=>null): null)
               .then(res => {
                   if (res && res.attempt && typeof res.attempt.score === 'number'){
@@ -527,7 +631,7 @@ function openLesson(id){
   async function computeKPIs(lessonId){
     try{
       const weeks = Array.from({length: Math.min(12,16)}, (_,i)=>i+1);
-      const calls = weeks.map(w=> fetch(`/api/progress/summary?lessonId=${encodeURIComponent(lessonId||'')}&week=${w}`).then(r=> r.ok? r.json().catch(()=>null):null).catch(()=>null));
+      const calls = weeks.map(w=> fetch(`${API_BASE}/api/progress/summary?lessonId=${encodeURIComponent(lessonId||'')}&week=${w}`).then(r=> r.ok? r.json().catch(()=>null):null).catch(()=>null));
       const results = await Promise.all(calls);
       const perf = []; let attempted=0; let passed=0;
       results.forEach(r=>{ if (!r) return; if (typeof r.bestScore==='number') { perf.push(r.bestScore); if (r.bestScore >= (r.passThreshold||70)) passed++; } if (r.attemptsCount>0) attempted++; });
@@ -537,15 +641,33 @@ function openLesson(id){
       document.getElementById('kpiPerformance').textContent = performance=== '-'? '-' : performance + '%';
       document.getElementById('kpiAttendance').textContent = attendance;
       document.getElementById('kpiCompletion').textContent = completion;
+      // also update grades summary in course sidebar if present
+      try{
+        const g = document.getElementById('gradesSummary'); if (g){ g.innerHTML = `<div>Performance: <strong>${performance=== '-'? '-' : performance + '%'}</strong></div><div>Attendance: <strong>${attendance}</strong></div><div>Completion: <strong>${completion}</strong></div>`; }
+      }catch(e){}
     }catch(e){ console.warn('computeKPIs', e); }
   }
 
   // role handling
+  // show/hide admin-only widgets depending on role
+  function applyRoleVisibility(){
+    try{
+      const role = sessionStorage.getItem('puente_role') || '';
+      const adminEls = document.querySelectorAll('.admin-only');
+      adminEls.forEach(el => {
+        if (!el) return;
+        el.style.display = (role === 'admin') ? '' : 'none';
+      });
+      const suggest = document.getElementById('adminSuggestion');
+      if (suggest) suggest.style.display = (role === 'admin') ? 'none' : 'flex';
+    }catch(e){/* ignore visibility errors */}
+  }
+
   async function initRoleAndData(){
     const sel = document.getElementById('roleSelect');
     const saved = sessionStorage.getItem('puente_role')||''; if (sel) sel.value = saved;
-    sel && sel.addEventListener('change', async ()=>{ sessionStorage.setItem('puente_role', sel.value); const lessons = await fetchLessons(); renderLessons(lessons); });
-    const lessons = await fetchLessons(); renderLessons(lessons);
+    sel && sel.addEventListener('change', async ()=>{ sessionStorage.setItem('puente_role', sel.value); const lessons = await fetchLessons(); renderLessons(lessons); applyRoleVisibility(); });
+    const lessons = await fetchLessons(); renderLessons(lessons); applyRoleVisibility();
     // restore persisted lesson/week selection if present
     try{
       const selLesson = localStorage.getItem('puente_selectedLesson');
@@ -600,7 +722,7 @@ function openLesson(id){
         return;
       }
       // fallback: fetch lesson from server then open
-      fetch(`/api/lesson/${encodeURIComponent(lid)}`).then(r=> r.ok? r.json(): null).then(data=>{
+      fetch(`${API_BASE}/api/lesson/${encodeURIComponent(lid)}`).then(r=> r.ok? r.json(): null).then(data=>{
         const lesson = data && data.lesson? data.lesson : data;
         if (!lesson) return;
         // cache it locally for future
@@ -654,7 +776,7 @@ function openLesson(id){
     // date is a Date object
     const iso = date.toISOString().slice(0,10); // YYYY-MM-DD
     try{
-      const r = await fetch(`/api/events?date=${encodeURIComponent(iso)}`);
+      const r = await fetch(`${API_BASE}/api/events?date=${encodeURIComponent(iso)}`);
       if (r.ok) return await r.json();
     }catch(e){ if (DEBUG) console.debug('fetchEventsForDate failed', e); }
     // fallback sample
@@ -698,7 +820,7 @@ function openLesson(id){
 
   async function fetchNotices(){
     try{
-      const r = await fetch('/api/notices'); if (r.ok){ const j = await r.json(); return j.notices || j; }
+      const r = await fetch(`${API_BASE}/api/notices`); if (r.ok){ const j = await r.json(); return j.notices || j; }
     }catch(e){ if (DEBUG) console.debug('fetchNotices failed, using fallback'); }
     // fallback static notices
     return [

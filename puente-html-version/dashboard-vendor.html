@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vendor Dashboard — Puente</title>
+  <link rel="stylesheet" href="style.css?v=2">
+  <style>
+    /* small vendor-only tweaks */
+    .vendor-hero { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px;border-radius:8px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04); }
+    .vendor-kpis { display:flex;gap:12px;margin-top:12px }
+    .vendor-kpi { background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.04);flex:1 }
+    .lessons-list { margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px }
+    .lesson-card { padding:12px;border-radius:8px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04) }
+  </style>
+</head>
+<body class="vendor-dashboard">
+  <script>try{ sessionStorage.setItem('puente_role','vendor'); }catch(e){}</script>
+
+  <main style="padding:18px;max-width:1100px;margin:18px auto">
+    <header class="vendor-hero">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div id="vendorAvatar" class="vendor-avatar" style="width:56px;height:56px;border-radius:999px;background:#e6e7eb;display:grid;place-items:center;font-weight:700;color:#fff;font-size:18px">V</div>
+        <div>
+          <h1 style="margin:0">Vendor Dashboard</h1>
+          <div class="muted" style="margin-top:6px">Quick access to your lessons, KPIs and demo submissions.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" onclick="location.href='contributor.html'">Upload Resource</button>
+        <button class="btn link-btn" onclick="location.href='index.html'">Switch account</button>
+      </div>
+    </header>
+
+    <section class="vendor-kpis" aria-label="Vendor KPIs">
+      <div id="vendorKpiPerformance" class="vendor-kpi"><div class="muted">Performance</div><div style="font-weight:700;font-size:20px">—</div></div>
+      <div id="vendorKpiAttempts" class="vendor-kpi"><div class="muted">Attempts</div><div style="font-weight:700;font-size:20px">—</div></div>
+      <div id="vendorKpiCompletion" class="vendor-kpi"><div class="muted">Completion</div><div style="font-weight:700;font-size:20px">—</div></div>
+    </section>
+
+    <section style="margin-top:18px;display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
+      <div>
+        <h3 style="margin-top:0">Your Lessons</h3>
+        <div id="vendorLessons" class="lessons-list"></div>
+        
+        <!-- Scheduled 6-week Vendor program -->
+        <div id="vendorScheduledProgram" class="card" style="margin-top:12px;padding:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <h4 style="margin:0">Scheduled: 6‑Week Vendor English</h4>
+              <div class="muted small" style="margin-top:6px">Practical English for market vendors — greetings, transactions, and safety.</div>
+            </div>
+            <div><button class="btn link-btn" onclick="window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',1)">Open</button></div>
+          </div>
+          <div style="margin-top:12px">
+            <ul id="vendorScheduledList" style="list-style:none;padding-left:0;margin-top:8px">
+              <li data-week="1" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
+                <div style="flex:1">Module 1 — Greetings</div>
+                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',1)">Enter</button></div>
+              </li>
+              <li data-week="2" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
+                <div style="flex:1">Module 2 — Phrases</div>
+                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',2)">Enter</button></div>
+              </li>
+              <li data-week="3" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
+                <div style="flex:1">Module 3 — Transactions</div>
+                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',3)">Enter</button></div>
+              </li>
+              <li data-week="4" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
+                <div style="flex:1">Module 4 — Asking for Help</div>
+                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',4)">Enter</button></div>
+              </li>
+              <li data-week="5" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
+                <div style="flex:1">Module 5 — Safety</div>
+                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',5)">Enter</button></div>
+              </li>
+              <li data-week="6" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:0">
+                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
+                <div style="flex:1">Module 6 — Review</div>
+                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',6)">Enter</button></div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Inline lesson viewer (hidden until a lesson is opened) -->
+        <div id="vendorLessonViewer" class="card" style="margin-top:16px;display:none;padding:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <h4 id="vl_title" style="margin:0">Lesson</h4>
+              <div id="vl_sub" class="muted" style="margin-top:6px">Week program</div>
+            </div>
+            <div><button id="vl_close" class="btn link-btn">Close</button></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:12px">
+            <div id="vendorWeekList" style="width:220px;max-height:420px;overflow:auto"></div>
+            <div id="vendorWeekDetail" style="flex:1;min-width:0"></div>
+          </div>
+        </div>
+      </div>
+
+      <aside style="position:relative">
+        <div class="card" style="padding:12px">
+          <strong>Quick Submit Attempt</strong>
+          <div class="muted small" style="margin-top:6px">For demos — includes `userId` automatically when available.</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            <select id="vs_lesson" style="width:100%;padding:8px;border-radius:6px"></select>
+            <input id="vs_week" placeholder="Week (e.g. 1)" style="padding:8px;border-radius:6px" />
+            <input id="vs_userid" placeholder="userId (optional)" style="padding:8px;border-radius:6px" />
+            <button id="vs_submit" class="btn">Submit Attempt</button>
+            <div id="vs_out" style="margin-top:8px;white-space:pre-wrap;background:#f7f8fa;padding:8px;border-radius:6px">No submission yet</div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px;margin-top:12px">
+          <strong>Shortcuts</strong>
+          <div style="margin-top:8px"><a href="/resources" class="link-btn">Manage resources</a></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <script>
+    // Ensure the global helper exists early so static buttons can call it before the main script initializes.
+    window.puente_openLessonWeek = window.puente_openLessonWeek || function(lessonId, week){
+      try{ sessionStorage.setItem('puente_pending_open', JSON.stringify({ lessonId, week: Number(week) })); }catch(e){}
+      try{ const sel = document.querySelector('#vendorScheduledList li[data-week="'+ Number(week) +'"]'); if (sel) try{ sel.click(); }catch(e){} }catch(e){}
+    };
+  </script>
+  <script src="dashboard-vendor.js"></script>
+  <div id="puente-debug" style="position:fixed;right:12px;bottom:12px;max-width:360px;z-index:99999;background:#fff;border:1px solid #eee;padding:8px;border-radius:8px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,0.08);display:none">
+    <div style="font-weight:700;margin-bottom:6px">Debug</div>
+    <div id="puente-debug-log" style="max-height:180px;overflow:auto;font-family:monospace;font-size:12px;color:#111"></div>
+    <div style="margin-top:8px;text-align:right;display:flex;gap:8px;justify-content:space-between">
+      <div style="text-align:left"><button class="btn" onclick="(function(){ try{ if (confirm('Clear local progress and module overrides? This cannot be undone locally.')){ for (const k of Object.keys(localStorage)){ if (k && (k.indexOf('puente_progress_')===0 || k.indexOf('puente_module_video_')===0)) localStorage.removeItem(k); } alert('Local progress cleared'); } }catch(e){ alert('Failed to clear'); } })()">Clear local progress</button></div>
+      <div><button class="btn" onclick="(function(){ const el=document.getElementById('puente-debug'); el.style.display = (el.style.display==='none') ? '' : 'none'; })()">Toggle</button></div>
+    </div>
+  </div>
+</body>
+</html>

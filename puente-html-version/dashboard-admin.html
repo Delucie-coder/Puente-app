@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard — Puente</title>
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body class="admin-dashboard">
+  <script>
+    // ensure role is admin for this page
+    try { sessionStorage.setItem('puente_role', 'admin'); } catch(e){}
+  </script>
+  <!-- Reuse main dashboard UI (admin view). Pass a flag to hide Lessons+ content inside the embedded dashboard. -->
+  <iframe src="dashboard.html?hide_lessons=1&hide_right=1" style="border:0;width:100%;height:100vh"></iframe>
+</body>
+</html>

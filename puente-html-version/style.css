@@ -117,6 +117,17 @@ body { background:var(--page-bg-color); background-image:var(--bg); color:var(--
 .student-dashboard .left-rail .rail-btn:focus-visible{ box-shadow: 0 0 0 4px var(--focus-ring); border-radius:12px }
 .student-dashboard .left-rail .rail-btn:active{ transform:translateY(0) }
 
+/* Compact week list rendered inside the narrow left rail */
+.rail-week-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.rail-week-item{ width:40px; height:36px; display:grid; place-items:center; border-radius:8px; background:transparent; color:var(--muted); border:none; cursor:pointer; font-weight:700 }
+.rail-week-item.selected{ background: linear-gradient(90deg, rgba(37,99,235,0.08), rgba(37,99,235,0.02)); color:var(--text); }
+.rail-week-item.done{ background:var(--good); color:#fff }
+
+/* Quick weeks duplicate inside main canvas (wrap style for small buttons) */
+#weekListMainInner .mini-week{ padding:8px 10px; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01)); color:var(--text); cursor:pointer; border:1px solid rgba(255,255,255,0.03); }
+#weekListMainInner .mini-week.selected{ border-color:#2563eb; box-shadow:0 8px 20px rgba(37,99,235,0.06); }
+#weekListMainInner .mini-week.done{ background:var(--good); color:#fff; border-color:transparent }
+
 /* Hover / active color accent depending on role */
 .student-dashboard .left-rail .rail-btn:hover .icon{ color:var(--icon-default) }
 .student-dashboard.vendor .left-rail .rail-btn:hover .icon{ color:var(--icon-vendor) }
@@ -262,6 +273,17 @@ input:focus,select:focus {
 .week-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
 .week-grid .btn{width:100%;text-align:center;padding:10px 12px;border-radius:12px}
 
+/* Course sidebar week list (matches screenshot) */
+.course-sidebar { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01)); border-radius:12px; }
+.course-sidebar .week-item { display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;cursor:pointer;border-left:4px solid transparent }
+.course-sidebar .week-item .check { width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:2px solid rgba(255,255,255,0.06);background:transparent;color:var(--muted);font-size:14px }
+.course-sidebar .week-item.done .check { background:var(--good);color:#fff;border:none }
+.course-sidebar .week-item .title { flex:1;text-align:left }
+.course-sidebar .week-item.selected { background: linear-gradient(90deg, rgba(37,99,235,0.06), rgba(37,99,235,0.02)); border-left-color: #2563eb; }
+.course-sidebar .week-item .week-num { font-weight:600 }
+.course-sidebar .grades-card { background:transparent;border-radius:8px }
+
+
 /* Muted text */
 .muted { color:var(--muted); }
 
@@ -288,6 +310,26 @@ input:focus,select:focus {
 .exercise-card{padding:.6rem;margin-bottom:.5rem}
 .option-label{display:block}
 .mt-1{margin-top:1.25rem}
+
+/* Week detail layout (dashboard) */
+.week-detail-root{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));border:1px solid rgba(255,255,255,0.03)}
+.week-detail-root{padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.35)}
+.week-media{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
+.week-video{width:100%;max-height:420px;border-radius:10px;display:block;box-shadow:0 8px 24px rgba(2,6,23,0.25)}
+.week-activities{margin-top:8px}
+.week-activities ul{padding-left:18px;margin-top:8px}
+.week-activities li{margin-bottom:8px;font-size:15px;line-height:1.4}
+.week-body{display:flex;flex-direction:column;gap:14px}
+.week-body > div{background:transparent;padding:6px}
+.exercise-card{padding:.75rem;margin-bottom:.6rem;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.01));border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+
+.week-detail-root h4{font-size:18px;margin-bottom:8px;color:var(--text)}
+.week-detail-root strong{color:var(--text)}
+
+@media (max-width:700px){
+  .week-video{max-height:220px}
+  .program-week-grid{grid-template-columns:repeat(2,1fr)}
+}
 
 /* Lesson card small utilities */
 .lesson-card { padding:12px; }
@@ -429,6 +471,14 @@ input:focus,select:focus {
 /* Progress bar inside tile */
 .program-week-progress { height:8px; background:rgba(255,255,255,0.06); border-radius:6px; overflow:hidden; margin-top:8px; }
 .program-week-progress .bar { height:100%; width:0%; background:linear-gradient(90deg,#6aa84f,#2e8b57); transition:width .4s ease; }
+
+/* small check mark in week lists */
+.week-check { width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;color:#fff;font-weight:700;background:transparent }
+.week-item.done .week-check, .rail-week-item.done { background:linear-gradient(90deg,#16a34a,#059669); color:#fff }
+
+/* legacy left-sidebar small check element */
+.check { width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:4px;color:#fff;font-weight:700;background:transparent }
+.week-item.done .check { background:linear-gradient(90deg,#16a34a,#059669); color:#fff }
 
 /* Focus and aria-selected visuals */
 .program-week-tile[tabindex] { outline: none; }

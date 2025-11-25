@@ -13,6 +13,29 @@
     "role": "admin",
     "passwordHash": "8964f8fd461b2830a3a8f4c76d2d624f9fb90d9c3532dc64a99b5987cb757bde136d4de8bb6a913241d7e0d4519da3c91959feeec5157ba49f06f350c2deb702",
     "passwordSalt": "f238172315de256d32aa035706763faa",
-    "token": "tkn_test_th6gw62qdv"
+    "token": "tkn_fno1pddiebj"
+  },
+  "delucierurangwa@gmail.com": {
+    "email": "delucierurangwa@gmail.com",
+    "name": null,
+    "photoUrl": null,
+    "created": 1763124214372,
+    "role": "student",
+    "token": "tkn_xq34p4ttnmn"
+  },
+  "vendor@example.com": {
+    "email": "vendor@example.com",
+    "name": "Vendor Test",
+    "photoUrl": null,
+    "created": 1763372582675,
+    "role": "student",
+    "token": "tkn_xgfwv8rzbbj"
+  },
+  "ci_vendor_demo@example.com": {
+    "email": "ci_vendor_demo@example.com",
+    "name": null,
+    "photoUrl": null,
+    "created": 1763374622991,
+    "role": "student"
   }
 }

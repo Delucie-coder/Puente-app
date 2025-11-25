@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Puente</title>
+  <link rel="stylesheet" href="style.css?v=2">
+  <style>
+    /* small admin-specific tweaks */
+    .admin-wrap{max-width:1200px;margin:18px auto;padding:12px}
+    .admin-top{display:flex;gap:12px;align-items:center;justify-content:space-between}
+    .admin-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;margin-top:12px}
+    .admin-left{min-height:320px}
+    .lesson-list{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow:auto}
+    .lesson-item{padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+    .lesson-item.selected{box-shadow:0 10px 30px rgba(0,0,0,0.08);border-color:#2563eb}
+    .admin-right .card{padding:14px}
+    .small-muted{font-size:13px;color:var(--muted)}
+    .login-row{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body class="student-dashboard">
+  <div class="admin-wrap">
+    <div class="admin-top">
+      <div>
+        <h2>Admin dashboard</h2>
+        <div class="small-muted">Manage lessons, thresholds and review attempts</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div id="adminUser" class="small-muted">Not signed in</div>
+        <div id="adminAuth" class="login-row">
+          <input id="adminEmail" placeholder="email" style="padding:8px;border-radius:8px;border:1px solid var(--line)" value="admin@example.com">
+          <input id="adminPassword" placeholder="password" type="password" style="padding:8px;border-radius:8px;border:1px solid var(--line)" value="adminpass">
+          <button id="btnLogin" class="btn btn-primary">Sign in</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <aside class="admin-left">
+        <div class="card">
+          <strong>Lessons</strong>
+          <div class="small-muted" style="margin-top:6px">Click a lesson to edit settings and review attempts</div>
+          <div id="lessonsList" class="lesson-list mt-1"></div>
+        </div>
+        <div class="card mt-1">
+          <strong>Quick Actions</strong>
+          <div style="margin-top:8px;display:flex;gap:8px"><button id="refreshLessons" class="btn">Refresh</button><button id="openSettingsAll" class="btn">Server Settings</button></div>
+        </div>
+      </aside>
+
+      <main class="admin-right">
+        <div id="rightPane" class="card">
+          <h3 id="lessonTitle">Select a lesson</h3>
+          <div id="lessonMeta" class="small-muted">No lesson selected</div>
+          <div id="settingsPanel" style="margin-top:12px;display:none">
+            <h4>Settings</h4>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <label style="min-width:140px">Pass Threshold</label>
+              <input id="passThreshold" type="number" min="0" max="100" style="width:100px;padding:8px;border-radius:8px;border:1px solid var(--line)" />
+              <div id="thresholdSource" class="small-muted" style="margin-left:8px">Source: -</div>
+            </div>
+            <div style="margin-top:12px"><button id="saveSettings" class="btn btn-primary">Save settings</button></div>
+          </div>
+
+          <div id="attemptsPanel" style="margin-top:18px;display:none">
+            <h4>Attempts Summary</h4>
+            <div id="attemptsList" class="small-muted mt-1">Loading attempts...</div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="admin.js?v=1"></script>
+</body>
+</html>

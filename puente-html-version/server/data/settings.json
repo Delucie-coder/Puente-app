@@ -4,7 +4,10 @@
   },
   "lessons": {
     "vendor_bilingual": {
-      "passThreshold": 74
+      "passThreshold": 71
+    },
+    "market_english_greetings": {
+      "passThreshold": 82
     }
   }
 }

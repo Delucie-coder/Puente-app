@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(window.location.search);
   const lessonId = params.get('id') || 'lang1';
+  const API_BASE = (window.location.port === '5500') ? 'http://localhost:3010' : '';
 
   // Simple lesson metadata (would come from server in production)
   const lessons = {
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openWeek(week, lessonId){
     sessionStorage.setItem(key, String(week));
-    fetch(`/api/lesson/${encodeURIComponent(lessonId)}/week/${week}`).then(r => r.json()).then(weekData => {
+    fetch(`${API_BASE}/api/lesson/${encodeURIComponent(lessonId)}/week/${week}`).then(r => r.json()).then(weekData => {
       renderWeek(week, weekData, lessonId);
     }).catch(() => {
       // create a small demo week for offline use
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Fetch lesson metadata and render schedule; fallback to embedded map
-  fetch(`/api/lesson/${encodeURIComponent(lessonId)}`).then(r => r.json()).then(meta => {
+  fetch(`${API_BASE}/api/lesson/${encodeURIComponent(lessonId)}`).then(r => r.json()).then(meta => {
     const role = sessionStorage.getItem('puente_role') || '';
     if (meta.audience && role && meta.audience !== role) {
       document.getElementById('lessonTitle').textContent = 'Access denied';
@@ -125,7 +126,7 @@ function submitAnswer(lessonId, week, questionId, questionIdx){
   // For demo, send result to API
   const email = (sessionStorage.getItem('puente_user') && JSON.parse(sessionStorage.getItem('puente_user')).email) || 'guest@demo';
   const payload = { email, lessonId, week, result: { questionId, selected } };
-  fetch('/api/progress', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
+  fetch(`${API_BASE}/api/progress`, { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(payload) })
     .then(r => r.json())
     .then(j => {
       showTempToast('Answer submitted');

@@ -1,1 +1,66 @@
-[]
+[
+  {
+    "id": "at_nicjtd9",
+    "lessonId": "market_english_greetings",
+    "week": "1",
+    "answers": [
+      0,
+      0
+    ],
+    "score": 0,
+    "createdBy": "ci_vendor_demo@example.com",
+    "created": 1763374622992
+  },
+  {
+    "id": "at_4qujn2s",
+    "lessonId": "market_english_greetings",
+    "week": "1",
+    "answers": [
+      0,
+      0
+    ],
+    "score": 0,
+    "createdBy": "vendor@example.com",
+    "created": 1763374622398
+  },
+  {
+    "id": "at_8ko1lmb",
+    "lessonId": "market_english_greetings",
+    "week": "1",
+    "answers": [
+      0,
+      0
+    ],
+    "score": 0,
+    "createdBy": "vendor@example.com",
+    "created": 1763373261004
+  },
+  {
+    "id": "at_q67o2od",
+    "lessonId": "market_english_greetings",
+    "week": "1",
+    "answers": [
+      0,
+      0
+    ],
+    "score": 0,
+    "createdBy": "vendor@example.com",
+    "created": 1763372582687
+  },
+  {
+    "id": "at_vegjvub",
+    "lessonId": "market_english_greetings",
+    "week": "1",
+    "score": 88,
+    "createdBy": "vendor_user",
+    "created": 1763372582661
+  },
+  {
+    "id": "at_693x2zm",
+    "lessonId": "market_english_greetings",
+    "week": "1",
+    "score": 88,
+    "createdBy": "vendor_user",
+    "created": 1763372477881
+  }
+]

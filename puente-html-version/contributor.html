@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Contributor — Puente</title>
+  <link rel="stylesheet" href="style.css?v=2">
+  <style>
+    .contrib-wrap{max-width:980px;margin:18px auto;padding:12px}
+    .contrib-grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+    .resource-list{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow:auto}
+    .resource-item{padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));border:1px solid rgba(255,255,255,0.03)}
+  </style>
+</head>
+<body class="student-dashboard">
+  <div class="contrib-wrap">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2>Contributor Dashboard</h2>
+        <div class="small-muted">Upload resources and manage your contributions</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="contribEmail" placeholder="email" value="contrib@example.com" style="padding:8px;border-radius:8px;border:1px solid var(--line)">
+        <button id="contribLogin" class="btn">Sign in</button>
+      </div>
+    </div>
+
+    <div class="contrib-grid mt-2">
+      <main>
+        <div class="card">
+          <h4>Upload Resource</h4>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+            <input id="resTitle" placeholder="Title" style="padding:8px;border-radius:8px;border:1px solid var(--line)">
+            <input id="resUrl" placeholder="File URL (optional)" style="padding:8px;border-radius:8px;border:1px solid var(--line)">
+            <input id="resFile" type="file" style="padding:8px;border-radius:8px;border:1px solid var(--line)" />
+            <select id="resAudience" style="padding:8px;border-radius:8px;border:1px solid var(--line)">
+              <option value="all">All</option>
+              <option value="vendor">Vendor</option>
+              <option value="moto">Moto</option>
+            </select>
+            <div><button id="btnUpload" class="btn btn-primary">Submit Resource</button></div>
+          </div>
+        </div>
+
+        <div class="card mt-1">
+          <h4>Your Resources</h4>
+          <div id="resourceList" class="resource-list mt-1">Loading...</div>
+        </div>
+      </main>
+
+      <aside>
+        <div class="card">
+          <strong>Guidelines</strong>
+          <div class="small-muted" style="margin-top:8px">Use an accessible URL or upload a base64 dataUrl. The server stores files under `/uploads` and returns a URL for use in lessons.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="contributor.js?v=2"></script>
+</body>
+</html>

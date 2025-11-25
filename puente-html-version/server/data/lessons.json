@@ -79,16 +79,17 @@
       "weeks": [
         {
           "week": 1,
-          "title": "Introduction to Market English",
+          "title": "introduction for market english",
           "videoUrl": "/media/meg/week1/why-english.mp4",
+          "youtubeUrl": "",
           "audioUrl": "/media/meg/week1/intro-audio.mp3",
           "thumbnailUrl": "/media/meg/week1/thumbnail.svg",
           "duration": "03:00",
           "activities": [
-            "Watch: 'Why English is useful for your work' (short video)",
-            "Learn 10 market English words",
-            "Record: short self-introduction audio",
-            "Group chat: introduce yourself in English"
+            "Watch a short video: \"Why English is useful for your work\"",
+            "Learn 10 new English words used in the market.",
+            "Practice self-introduction audio (\"My name is… I sell…\")",
+            "Group chat activity: Introduce yourself in English."
           ],
           "phrases": [
             { "phrase": "My name is...", "translation": "Je m'appelle...", "phonetic": "My name is..." },
@@ -108,6 +109,7 @@
           "week": 2,
           "title": "Basic Greetings",
           "videoUrl": "/media/meg/week2/greetings-demo.mp4",
+          "youtubeUrl": "",
           "activities": [
             "Listen & repeat: Hello, Hi, Good morning, Good evening",
             "Pair practice: record yourself greeting a customer",
@@ -135,6 +137,7 @@
         {
           "week": 3,
           "title": "Introducing Yourself and Others",
+          "youtubeUrl": "",
           "activities": [
             "Watch demo conversation: 'This is my friend John'",
             "Write a short introduction",
@@ -156,6 +159,7 @@
           "week": 4,
           "title": "Greeting Customers and Starting a Conversation",
           "videoUrl": "/media/meg/week4/customer-greeting.mp4",
+          "youtubeUrl": "",
           "activities": [
             "Watch sample customer greeting video",
             "Role-play: greet a customer and ask what they need",
@@ -181,6 +185,7 @@
         {
           "week": 5,
           "title": "Asking and Answering Simple Questions",
+          "youtubeUrl": "",
           "activities": [
             "Learn question words: What, Where, How, Who",
             "Pair practice: ask and answer 'Where are you from?'",
@@ -206,6 +211,7 @@
         {
           "week": 6,
           "title": "Courtesy Expressions",
+          "youtubeUrl": "",
           "activities": [
             "Watch: 'Using Please and Thank You.'",
             "Practice polite words in dialogues",
@@ -231,6 +237,7 @@
         {
           "week": 7,
           "title": "Everyday Market Conversations",
+          "youtubeUrl": "",
           "activities": [
             "Listen to a typical market conversation",
             "Dialogue practice: seller and buyer",
@@ -251,6 +258,7 @@
         {
           "week": 8,
           "title": "Making Small Talk with Customers",
+          "youtubeUrl": "",
           "activities": [
             "Watch examples: weather & day talk",
             "Create and record 3 small talk phrases",
@@ -276,6 +284,7 @@
         {
           "week": 9,
           "title": "Greeting in Special Situations",
+          "youtubeUrl": "",
           "activities": [
             "Learn holiday & special event phrases",
             "Create a greeting card in English",
@@ -302,6 +311,7 @@
           "week": 10,
           "title": "Market Etiquette and Body Language",
           "videoUrl": "/media/meg/week10/etiquette.mp4",
+          "youtubeUrl": "",
           "activities": [
             "Watch: polite gestures and eye contact",
             "Reflect on gestures that are rude vs friendly",
@@ -327,6 +337,7 @@
         {
           "week": 11,
           "title": "Review and Practice through Role Plays",
+          "youtubeUrl": "",
           "activities": [
             "Review greetings, polite phrases, and questions",
             "Perform role-play: meeting a new customer",
@@ -349,6 +360,7 @@
           "week": 12,
           "title": "Assessment and Celebration",
           "videoUrl": "/media/meg/week12/final-celebration.mp4",
+          "youtubeUrl": "",
           "activities": [
             "Final oral test (audio/video greeting)",
             "Self-reflection survey: what did you learn?",
@@ -366,6 +378,113 @@
           "thumbnailUrl": "/media/meg/week12/thumbnail.svg",
           "duration": "04:00",
           "quizDeadline": "End of Week 12 (Sunday)"
+        }
+      ]
+    }
+    ,
+    {
+      "id": "moto_english_daily",
+      "title": "Motorcyclist English: Daily Basics",
+      "language": "English",
+      "audience": "motorcyclist",
+      "summary": "A 6-week focused course for motorcyclists to learn short, practical English phrases for directions, safety, and customer interactions.",
+      "weeks": [
+        {
+          "week": 1,
+          "title": "Greeting and Identification",
+          "videoUrl": "/media/moto/week1/greeting.mp4",
+          "activities": [
+            "Learn short greetings: Hello, Hi, Good morning",
+            "Practice saying your name and vehicle type",
+            "Role-play: greeting a passenger"
+          ],
+          "phrases": [
+            { "phrase": "Hello, my name is...", "translation": "", "phonetic": "Hello, my name is..." },
+            { "phrase": "I am a rider", "translation": "", "phonetic": "I am a rider" }
+          ],
+          "exercises": [
+            { "id": "moto-1-quiz", "type": "mcq", "question": "Which phrase is a greeting?", "options": [ { "id": "A", "text": "Hello" }, { "id": "B", "text": "Stop" }, { "id": "C", "text": "Left" } ], "answerId": "A" }
+          ]
+        },
+        {
+          "week": 2,
+          "title": "Asking for Directions",
+          "videoUrl": "/media/moto/week2/directions.mp4",
+          "activities": [
+            "Practice asking 'Where is...' and 'How do I get to...'",
+            "Role-play giving and following directions"
+          ],
+          "phrases": [
+            { "phrase": "Where is the market?", "translation": "", "phonetic": "Where is the market?" },
+            { "phrase": "Turn left/right", "translation": "", "phonetic": "Turn left / Turn right" }
+          ],
+          "exercises": [
+            { "id": "moto-2-quiz", "type": "mcq", "question": "How do you ask for directions?", "options": [ { "id": "A", "text": "Where is the bank?" }, { "id": "B", "text": "How much?" } ], "answerId": "A" }
+          ]
+        },
+        {
+          "week": 3,
+          "title": "Safety Phrases",
+          "videoUrl": "/media/moto/week3/safety.mp4",
+          "activities": [
+            "Learn safety phrases: Slow down, Stop, Watch out",
+            "Practice short safety announcements"
+          ],
+          "phrases": [
+            { "phrase": "Slow down", "translation": "", "phonetic": "Slow down" },
+            { "phrase": "Watch out", "translation": "", "phonetic": "Watch out" }
+          ],
+          "exercises": [
+            { "id": "moto-3-quiz", "type": "mcq", "question": "Which is a safety phrase?", "options": [ { "id": "A", "text": "Watch out" }, { "id": "B", "text": "Good job" } ], "answerId": "A" }
+          ]
+        },
+        {
+          "week": 4,
+          "title": "Communicating with Passengers",
+          "videoUrl": "/media/moto/week4/passengers.mp4",
+          "activities": [
+            "Practice polite phrases for passengers",
+            "Record short dialogues for pickups and drop-offs"
+          ],
+          "phrases": [
+            { "phrase": "Where would you like to go?", "translation": "", "phonetic": "Where would you like to go?" },
+            { "phrase": "Please sit safely", "translation": "", "phonetic": "Please sit safely" }
+          ],
+          "exercises": [
+            { "id": "moto-4-quiz", "type": "mcq", "question": "How do you ask for a destination?", "options": [ { "id": "A", "text": "Where to?" }, { "id": "B", "text": "Who are you?" } ], "answerId": "A" }
+          ]
+        },
+        {
+          "week": 5,
+          "title": "Handling Payments",
+          "videoUrl": "/media/moto/week5/payments.mp4",
+          "activities": [
+            "Practice phrases for discussing fares and change",
+            "Simulate payment exchanges"
+          ],
+          "phrases": [
+            { "phrase": "The fare is...", "translation": "", "phonetic": "The fare is..." },
+            { "phrase": "Do you have change?", "translation": "", "phonetic": "Do you have change?" }
+          ],
+          "exercises": [
+            { "id": "moto-5-quiz", "type": "mcq", "question": "Which question asks about change?", "options": [ { "id": "A", "text": "Do you have change?" }, { "id": "B", "text": "Where is the bank?" } ], "answerId": "A" }
+          ]
+        },
+        {
+          "week": 6,
+          "title": "Review & Short Assessment",
+          "videoUrl": "/media/moto/week6/review.mp4",
+          "activities": [
+            "Review key phrases from weeks 1-5",
+            "Short spoken assessment"
+          ],
+          "phrases": [
+            { "phrase": "Thank you", "translation": "", "phonetic": "Thank you" },
+            { "phrase": "Have a good day", "translation": "", "phonetic": "Have a good day" }
+          ],
+          "exercises": [
+            { "id": "moto-6-quiz", "type": "comprehensive", "question": "Complete the review and submit a short audio" }
+          ]
         }
       ]
     }

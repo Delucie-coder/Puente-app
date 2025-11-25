@@ -1,174 +1,100 @@
-# Puente-app — Local README
+# Puente-app — Local developer guide
 
-This README contains developer notes for running the Puente demo server, the available API endpoints, admin instructions, and how to manage placeholder lesson media.
+This repository contains a small vanilla front-end and a Node.js mock API (Express) used for local development and demos. The mock server persists data to JSON files under `puente-html-version/server/data` and serves uploaded files from `/uploads`.
 
-## Quick start (dev)
+## Quick start (Windows - cmd.exe)
 
-1. From the repository root, start the mock server:
+1. Open a Command Prompt and start the mock server (from the server directory):
 
 ```cmd
-node puente-html-version\server\server.js
+cd C:\Users\Hp\Desktop\Puente-app\puente-html-version\server
+npm.cmd install
+set PORT=3001
+npm.cmd start
 ```
 
-2. Open the app at: http://localhost:3001
+2. Open the front-end in your browser:
 
-Note: for the local demo's look & feel we recommend using system-friendly fonts to match screenshots (Segoe UI on Windows). Example font stack is: `Segoe UI, Inter, system-ui, -apple-system, Roboto, Arial`.
+http://localhost:3001/contributor.html  (Contributor UI)
+http://localhost:3001/dashboard.html    (Main dashboard)
 
-3. Seeded demo admin account (for assignment and settings management):
+Seeded demo admin credentials (for convenience):
 
 - Email: `admin@example.com`
 - Password: `adminpass`
 
-4. Helpful scripts (optional): the `server/scripts` folder contains helpers to create and verify placeholder media described later.
+Notes:
+- The server returns a token on `POST /api/login`. When logging in with a password the server will persist a token on the user record so you can use `Authorization: Bearer <token>` for subsequent requests.
 
-## API endpoints (developer overview)
+## Useful developer scripts
 
-Note: this mock server uses a simple token-based demo auth. To call admin-protected endpoints you must include an Authorization header: `Authorization: Bearer <token>` where `<token>` is returned by `/api/login` or is on the returned user object as `token`.
+- `server/scripts/test_settings_save.js` — logs in as the demo admin, POSTs a lesson pass-threshold, and confirms it persisted to `data/settings.json`.
+- `server/scripts/test_upload.js` — logs in as admin and uploads `server/test_assets/sample.txt` as a base64 dataUrl, then verifies the resource is listed.
+
+Run tests (while the server is running) from the `server` folder:
+
+```cmd
+node scripts/test_settings_save.js
+node scripts/test_upload.js
+```
+
+## Endpoints overview
+
+Authentication note: include the header `Authorization: Bearer <token>` for endpoints that require authentication (admin-only endpoints require an admin user and token).
 
 - POST /api/login
-   - Body: `{ "email": "...", "password": "...", "role": "vendor|moto|admin" }`
-   - Returns: `{ token, user }`. Use the returned token for authenticated calls.
+  - Body: `{ "email": "...", "password": "...", "role": "vendor|moto|admin" }`
+  - Returns: `{ token, user }`.
 
 - GET /api/settings?lessonId=<id>
-   - Public read of pass threshold configuration.
-   - Returns: `{ passThreshold: number, source: 'lesson'|'default' }`.
+  - Public. Returns `{ passThreshold: number, source: 'lesson'|'default' }`.
 
 - POST /api/settings
-   - Admin-only. Body: `{ passThreshold: number, lessonId?: string }`.
-   - Persists the passThreshold globally (defaults) or for a specific lesson. Returns `{ ok:true, passThreshold, lessonId }`.
-
-- POST /api/profile/photo
-   - Auth required. Body: `{ dataUrl: '<data:image/...;base64,...>' }`.
-   - Saves profile image under `/uploads` and associates it with the user's server record. Returns updated user object.
-
-- POST /api/profile/photo/delete
-   - Auth required. Removes the user's profile photo from `/uploads` and clears the server user record photoUrl.
+  - Admin-only. Body: `{ passThreshold: number, lessonId?: string }`.
 
 - GET /api/lessons
-   - Public. Returns lesson list metadata.
-
 - GET /api/lesson/:id
-   - Public. Returns lesson metadata including weeks.
-
 - GET /api/lesson/:id/week/:week
-   - Public. Returns the content for the specified week (media URLs, phrases, exercises).
 
 - POST /api/attempts
-   - Auth required. Body: `{ lessonId, week, answers: [] }`.
-   - Server grades MCQ answers and persists the attempt. Returns the attempt record `{ attempt }`.
+  - Auth required. Body: `{ lessonId, week, answers: [] }`.
 
 - GET /api/attempts?lessonId=&week=
-   - Auth required. Returns attempts for the authenticated user (admin sees all attempts).
-
 - GET /api/progress/summary?lessonId=&week=
-   - Auth required. Returns `{ attemptsCount, bestScore, lastAttempt }` for the authenticated user or all if admin.
-
-- GET /api/assignments
-   - Public. Returns saved assignments.
-
-- POST /api/assignments
-   - Admin-only. Create assignment. Body: `{ title, due, lessonId? }`.
-
-- PUT /api/assignments/:id
-   - Admin-only. Update assignment.
-
-- DELETE /api/assignments/:id
-   - Admin-only. Delete assignment.
 
 - GET /api/resources
-   - Public.
-
 - POST /api/resource
-   - Auth required. Body: `{ title, dataUrl?, filename?, audience? }`.
-   - Saves a resource and optional uploaded file to `/uploads`.
+  - Supports either JSON `{ title, dataUrl?, filename?, audience? }` or multipart `file` field (multipart/form-data).
+  - When uploading a file with multipart, use field name `file` (the front-end contributor UI already sends FormData when a file is selected).
 
-### Quick examples (Windows cmd.exe)
+## Contributor UI
 
-Login as admin (returns token in JSON):
+Open `http://localhost:3001/contributor.html` in your browser.
 
-```cmd
-curl -X POST http://localhost:3001/api/login -H "Content-Type: application/json" -d "{\"email\":\"admin@example.com\",\"password\":\"adminpass\"}"
-```
+- Sign in using an email (the demo server will create a user record and return a token).
+- You can upload a resource by selecting a `file` or by providing a hosted file URL.
+- Uploaded files are saved under `server/data/uploads` and the resource record includes `url` pointing to `/uploads/<filename>`.
+- The contributor listing shows previews for images, icons for PDF/video, and provides `Open` and `Copy URL` actions.
 
-Save a lesson-level pass threshold (replace <TOKEN> with the returned token):
+## Replacing lesson media
 
-```cmd
-curl -X POST http://localhost:3001/api/settings -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d "{\"passThreshold\":75,\"lessonId\":\"vendor_bilingual\"}"
-```
+1. Place your media files into `puente-html-version/server/data/uploads/`.
+2. If you change filenames, update `puente-html-version/server/data/lessons.json` for the affected lesson/week `videoUrl`/`audioUrl` fields.
+3. Restart the server to pick up file changes.
 
-Read the effective value for a lesson (no auth required):
+## Tips & troubleshooting
 
-```cmd
-curl "http://localhost:3001/api/settings?lessonId=vendor_bilingual"
-```
+- If PowerShell blocks `npm` due to execution policy, use `cmd.exe` and run `npm.cmd` as shown above.
+- If port 3001 is already in use, start the server with a different port: `set PORT=3002` then `npm.cmd start` and open the front-end at `http://localhost:3002`.
 
-Record a quiz attempt (authenticated):
+## Security & limitations
 
-```cmd
-curl -X POST http://localhost:3001/api/attempts -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d "{\"lessonId\":\"vendor_bilingual\",\"week\":\"1\",\"answers\":[0,1]}"
-```
+- This mock server is for local development only. Tokens are stored on the server user record and do not expire; do not use this approach in production.
+- Data is stored in JSON files under `puente-html-version/server/data/` and the file-based approach is not suitable for concurrent production workloads.
 
-Upload a profile photo (authenticated):
+## Next steps I can help with
 
-```cmd
-curl -X POST http://localhost:3001/api/profile/photo -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d "{\"dataUrl\":\"data:image/png;base64,...\"}"
-```
-
-Create an assignment (admin):
-
-```cmd
-curl -X POST http://localhost:3001/api/assignments -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d "{\"title\":\"Lesson 1: Greetings Quiz\",\"due\":\"2025-11-15\",\"lessonId\":\"vendor_bilingual\"}"
-```
-
-## Lesson media — checklist for replacing placeholders
-
-The project includes a 12-week `vendor_bilingual` lesson. Placeholder media live under:
-
-`puente-html-version/server/data/uploads/vendor_week{1..12}.gif` and `vendor_week{1..12}.wav` (or `.mp4`/`.mp3` if you add them).
-
-Steps to replace placeholders:
-
-1. Prepare your media files. Keep names ASCII-only and compact. Example:
-    - `vendor_week1.mp4`
-    - `vendor_week1.mp3`
-
-2. Copy files into the uploads folder:
-
-```cmd
-copy C:\path\to\vendor_week1.mp4 puente-html-version\server\data\uploads\vendor_week1.mp4
-copy C:\path\to\vendor_week1.mp3 puente-html-version\server\data\uploads\vendor_week1.mp3
-```
-
-3. If filenames differ from what's declared in `puente-html-version/server/data/lessons.json`, edit that file and update the `videoUrl`/`audioUrl` fields for the affected week entries.
-
-4. Restart the mock server to pick up the changes:
-
-```cmd
-node puente-html-version\server\server.js
-```
-
-5. Run the verification helper to confirm referenced upload files exist:
-
-```cmd
-node puente-html-version\server\scripts\verify_media.js
-```
-
-## Quick settings-test (manual)
-
-1. Login as admin (see example above) and capture the token from the JSON response.
-2. POST to `/api/settings` with your desired `passThreshold` (and optional `lessonId`) using `curl` or a REST client and include the `Authorization` header.
-3. Confirm the change by GET `/api/settings?lessonId=...` (or without lessonId to inspect defaults).
-4. Optionally inspect `puente-html-version/server/data/settings.json` to confirm persistence.
-
-## Notes & limitations
-
-- Authentication is demo-only: tokens are stored on the server-side user record and do not expire. This is convenient for testing but not secure for production.
-- The server stores data in JSON files under `puente-html-version/server/data/`. For production use a real database and hardened auth.
-- Concurrency: the file-write model here is simple and may not be safe under heavy concurrent writes; it's fine for local demos.
-
-If you'd like, I can also:
-
-- Add a small automated test script that authenticates as admin and verifies `/api/settings` persistence.
-- Add a UI indicator in the dashboard showing whether the passing threshold is a local override or a server-provided value.
+- Add a CI-friendly test runner that starts the server, runs the test scripts, and reports results.
+- Add detailed README sections for each front-end page (dashboard, admin, contributor).
 
 # Puente-app

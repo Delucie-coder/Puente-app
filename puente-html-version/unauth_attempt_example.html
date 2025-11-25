@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Unauthenticated Attempt Example</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;padding:16px}label{display:block;margin-top:8px}input,select,button{padding:6px;margin-top:4px;width:100%;max-width:420px}pre{background:#f6f8fa;padding:12px;border-radius:6px}</style>
+</head>
+<body>
+  <h2>Submit an Unauthenticated Attempt (Demo)</h2>
+  <p>This demo shows how a vendor/learner can POST an attempt either authenticated (login -> Bearer) or unauthenticated by including a <code>userId</code> in the request body. The server accepts the unauthenticated submission when <code>userId</code> is present (demo convenience).</p>
+
+  <label>Server Host (leave blank for same origin)
+    <input id="host" placeholder="http://localhost:3001" />
+  </label>
+
+  <label>Lesson ID
+    <input id="lessonId" value="market_english_greetings" />
+  </label>
+
+  <label>Week
+    <input id="week" value="1" />
+  </label>
+
+  <label>Email (used for login when authenticating)
+    <input id="email" value="vendor@example.com" />
+  </label>
+
+  <label>Name
+    <input id="name" value="Vendor Demo" />
+  </label>
+
+  <label style="margin-top:8px">
+    <input type="checkbox" id="unauthCheckbox" /> Submit unauthenticated (include <code>userId</code> instead of Bearer token)
+  </label>
+
+  <label>UserId (when unauthenticated, sent as `userId` in body)
+    <input id="userId" placeholder="vendor@example.com" />
+  </label>
+
+  <label>Use answers JSON (optional, e.g. [0,0])
+    <input id="answers" placeholder='[0,0]' />
+  </label>
+
+  <button id="submit">Submit Attempt</button>
+
+  <h3>Result</h3>
+  <pre id="out">(no submission yet)</pre>
+
+  <script>
+    document.getElementById('submit').addEventListener('click', async () => {
+      const host = (document.getElementById('host').value || window.location.origin).replace(/\/$/, '');
+      const lessonId = document.getElementById('lessonId').value;
+      const week = document.getElementById('week').value;
+      const email = document.getElementById('email').value;
+      const name = document.getElementById('name').value;
+      const answersRaw = document.getElementById('answers').value;
+
+      if (!lessonId || !week || !email) {
+        document.getElementById('out').textContent = 'lessonId, week and email are required';
+        return;
+      }
+
+      // Decide whether to submit unauthenticated (userId) or authenticate first
+      const unauth = document.getElementById('unauthCheckbox').checked;
+      let answers = [];
+      if (answersRaw) {
+        try { answers = JSON.parse(answersRaw); } catch(e){ document.getElementById('out').textContent = 'Invalid answers JSON'; return; }
+      }
+
+      try {
+        if (unauth) {
+          const userIdVal = document.getElementById('userId').value || email;
+          const payload = { lessonId, week, answers, userId: userIdVal };
+          const res = await fetch(host + '/api/attempts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const j = await res.json().catch(()=>null);
+          document.getElementById('out').textContent = res.status + '\n' + JSON.stringify(j, null, 2);
+          return;
+        }
+
+        // Authenticated flow: log in first
+        const loginRes = await fetch(host + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, name, role: 'student' }) });
+        const loginJson = await loginRes.json().catch(()=>null);
+        if (!loginRes.ok || !loginJson || !loginJson.token) {
+          document.getElementById('out').textContent = 'Login failed: ' + loginRes.status + '\n' + JSON.stringify(loginJson, null, 2);
+          return;
+        }
+        const token = loginJson.token;
+        const payload = { lessonId, week, answers };
+        const res = await fetch(host + '/api/attempts', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }, body: JSON.stringify(payload) });
+        const j = await res.json().catch(()=>null);
+        document.getElementById('out').textContent = res.status + '\n' + JSON.stringify(j, null, 2);
+      } catch (e) {
+        document.getElementById('out').textContent = 'Error: ' + String(e);
+      }
+    });
+  </script>
+</body>
+</html>

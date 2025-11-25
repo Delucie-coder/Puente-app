@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin — Module Videos</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:Segoe UI,Arial;margin:18px;background:#f7fafc;color:#111}
+    .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 4px 14px rgba(2,6,23,0.06);margin-bottom:12px}
+    .muted{color:#6b7280}
+    .row{display:flex;gap:12px;align-items:center}
+    select,input{padding:8px;border-radius:6px;border:1px solid #e5e7eb}
+    button.btn{padding:8px 12px;border-radius:6px;border:0;background:#0ea5a4;color:#fff}
+    button.warn{background:#ef4444}
+    label{display:block;margin-bottom:6px;font-weight:600}
+    .week-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .week-item{padding:8px;border:1px solid #e6edf0;border-radius:6px;background:#fff}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <h2>Admin — Module Videos</h2>
+  <div class="card">
+    <div class="row" style="margin-bottom:8px">
+      <div style="flex:1">
+        <label for="amv_lessons">Lesson</label>
+        <select id="amv_lessons"><option>Loading...</option></select>
+      </div>
+      <div style="width:220px">
+        <label>&nbsp;</label>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="amv_refresh">Refresh</button>
+          <button class="btn" id="amv_logout">Logout</button>
+        </div>
+      </div>
+    </div>
+    <div id="amv_weeks" class="week-grid"></div>
+    <div id="amv_status" class="muted small" style="margin-top:8px"></div>
+  </div>
+  <script src="admin-module-videos.js"></script>
+</body>
+</html>

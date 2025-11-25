@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
+const multer = require('multer');
 const cors = require('cors');
 
 const app = express();
@@ -19,6 +20,19 @@ app.use('/', express.static(STATIC_ROOT));
 const UPLOADS_DIR = path.join(__dirname, 'data', 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 app.use('/uploads', express.static(UPLOADS_DIR));
+
+// Multer setup for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: function (req, file, cb) {
+    const id = 'r_' + Math.random().toString(36).slice(2,9);
+    const safe = (file.originalname || 'file').replace(/[^a-z0-9.\-\_\.]/gi, '_');
+    cb(null, `${id}-${Date.now()}-${safe}`);
+  }
+});
+const upload = multer({ storage });
 
 // Load lessons data
 const DATA_FILE = path.join(__dirname, 'data', 'lessons.json');
@@ -143,8 +157,12 @@ app.post('/api/login', (req, res) => {
     const candidate = hashPassword(password, existing.passwordSalt);
     if (candidate.hash !== existing.passwordHash) return res.status(401).json({ error: 'invalid credentials' });
     // authenticated
+    // persist a session token on the user record so Bearer auth works for subsequent requests
+    const tokenValue = 'tkn_' + Math.random().toString(36).slice(2,22);
+    existing.token = tokenValue;
+    saveUsers();
     const user = Object.assign({}, existing);
-    return res.json({ token, user });
+    return res.json({ token: tokenValue, user });
   }
 
   // legacy / first-login flow: create or update simple user record without password
@@ -287,6 +305,31 @@ app.post('/api/profile/photo', (req, res) => {
   }
 });
 
+// POST /api/progress - accept progress updates (demo: allows unauthenticated with userId)
+app.post('/api/progress', (req, res) => {
+  const actor = getUserFromAuth(req);
+  const { lessonId, week, progress, userId } = req.body || {};
+  // allow unauthenticated clients if they provide userId (demo convenience)
+  if (!actor && !userId) return res.status(401).json({ error: 'unauthenticated' });
+  if (!lessonId || !week || !progress) return res.status(400).json({ error: 'missing params' });
+  const userEmail = actor ? String(actor.email).toLowerCase() : String(userId).toLowerCase();
+  const key = `${userEmail}:${lessonId}`;
+  progressStore[key] = progressStore[key] || { byWeek: {}, updated: Date.now(), email: userEmail, lessonId };
+  progressStore[key].byWeek = progressStore[key].byWeek || {};
+  // store provided progress object for the specified week
+  progressStore[key].byWeek[String(week)] = Object.assign({}, progress, { updated: Date.now() });
+  // determine pass threshold (lesson-specific or default)
+  let pass = (settingsStore && settingsStore.defaults && typeof settingsStore.defaults.passThreshold === 'number') ? settingsStore.defaults.passThreshold : 70;
+  if (settingsStore && settingsStore.lessons && settingsStore.lessons[lessonId] && typeof settingsStore.lessons[lessonId].passThreshold === 'number'){
+    pass = settingsStore.lessons[lessonId].passThreshold;
+  }
+  const bestScore = (progress && typeof progress.bestScore === 'number') ? progress.bestScore : null;
+  progressStore[key].byWeek[String(week)].completed = bestScore !== null ? (bestScore >= pass) : false;
+  progressStore[key].updated = Date.now();
+  saveProgress();
+  return res.json({ ok: true, key, progress: progressStore[key] });
+});
+
 // POST /api/profile/photo/delete - remove user's photo (demo)
 app.post('/api/profile/photo/delete', (req, res) => {
   const authUser = getUserFromAuth(req);
@@ -377,22 +420,64 @@ function saveResources() {
   }
 }
 
+// -----------------------
+// Module video overrides (persisted server-side)
+// -----------------------
+const MODULE_VIDEOS_FILE = path.join(__dirname, 'data', 'module_videos.json');
+let moduleVideos = {}; // structure: { [lessonId]: { [week]: url } }
+try {
+  if (fs.existsSync(MODULE_VIDEOS_FILE)) moduleVideos = JSON.parse(fs.readFileSync(MODULE_VIDEOS_FILE, 'utf8')) || {};
+} catch (err) { console.warn('Could not load module_videos.json', err); moduleVideos = {}; }
+
+function saveModuleVideos(){ try { fs.writeFileSync(MODULE_VIDEOS_FILE, JSON.stringify(moduleVideos, null, 2), 'utf8'); } catch(e){ console.warn('Failed to save module_videos', e); } }
+
+// GET /api/module-video?lessonId=&week=
+app.get('/api/module-video', (req, res) => {
+  const { lessonId, week } = req.query;
+  if (!lessonId || !week) return res.status(400).json({ error: 'missing params' });
+  const lessonMap = moduleVideos[lessonId] || {};
+  const url = lessonMap[String(week)] || null;
+  return res.json({ lessonId, week: String(week), url });
+});
+
+// POST /api/module-video - admin required to set a canonical module video url
+// body: { lessonId, week, url }
+app.post('/api/module-video', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const { lessonId, week, url } = req.body || {};
+  if (!lessonId || !week || !url) return res.status(400).json({ error: 'missing params' });
+  moduleVideos[lessonId] = moduleVideos[lessonId] || {};
+  moduleVideos[lessonId][String(week)] = String(url);
+  saveModuleVideos();
+  return res.json({ ok: true, lessonId, week: String(week), url });
+});
+
 // GET /api/resources
 app.get('/api/resources', (req, res) => {
   res.json({ resources: resourcesStore });
 });
 
-// POST /api/resource - accept title, dataUrl(optional), filename, audience
-app.post('/api/resource', (req, res) => {
-  const { title, dataUrl, filename, audience } = req.body || {};
-  if (!title) return res.status(400).json({ error: 'missing title' });
+// POST /api/resource - accept title, dataUrl(optional), filename, audience OR multipart file upload
+app.post('/api/resource', upload.single('file'), (req, res) => {
+  // If multipart, multer will populate req.file; otherwise fall back to JSON body
+  const body = req.body || {};
+  const { title, dataUrl, filename, audience } = body;
+  if (!title && !body.title) return res.status(400).json({ error: 'missing title' });
   // require authenticated uploader
   const authUser = getUserFromAuth(req);
   if (!authUser) return res.status(401).json({ error: 'unauthenticated' });
   const id = 'r_' + Math.random().toString(36).slice(2,9);
   let url = null;
-  if (dataUrl) {
-    const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
+  let outFilename = filename || null;
+
+  // If multer saved a file, prefer that
+  if (req.file) {
+    outFilename = req.file.originalname || req.file.filename;
+    url = `/uploads/${req.file.filename}`;
+  } else if (dataUrl) {
+    const matches = String(dataUrl).match(/^data:(.+);base64,(.+)$/);
     if (matches) {
       const mime = matches[1];
       const b64 = matches[2];
@@ -403,12 +488,17 @@ app.post('/api/resource', (req, res) => {
       try {
         fs.writeFileSync(outPath, Buffer.from(b64, 'base64'));
         url = `/uploads/${outName}`;
+        outFilename = safeName;
       } catch (err) {
         console.error('Failed to save resource file', err);
       }
     }
+  } else if (body.url) {
+    // Client provided a hosted URL instead of uploading
+    url = body.url;
   }
-  const rec = { id, title, filename: filename || null, url, audience: audience || 'all', uploader: authUser.email || null, created: Date.now() };
+
+  const rec = { id, title: title || body.title || 'Untitled', filename: outFilename || null, url, audience: audience || 'all', uploader: authUser.email || null, created: Date.now() };
   resourcesStore.unshift(rec);
   saveResources();
   res.json({ ok: true, resource: rec });
@@ -450,17 +540,35 @@ try {
 
 function saveAttempts(){ try { fs.writeFileSync(ATTEMPTS_FILE, JSON.stringify(attemptsStore, null, 2), 'utf8'); } catch (e){ console.warn('Failed to save attempts', e); } }
 
-// POST /api/attempts - record a quiz attempt (authenticated)
+// POST /api/attempts - record a quiz attempt
+// Accepts either an authenticated request (Bearer token) or an unauthenticated
+// submission that includes a `userId` in the request body (demo convenience).
 app.post('/api/attempts', (req, res) => {
   const actor = getUserFromAuth(req);
-  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
-  const { lessonId, week, answers } = req.body || {};
+  const { lessonId, week, answers, userId } = req.body || {};
+  // Allow unauthenticated clients only when they provide a userId
+  if (!actor && !userId) return res.status(401).json({ error: 'unauthenticated' });
   if (!lessonId || !week || !Array.isArray(answers)) return res.status(400).json({ error: 'missing params' });
+
+  // If unauthenticated but provided userId, ensure a lightweight user record exists
+  let createdBy = null;
+  if (actor) createdBy = actor.email;
+  else if (userId) {
+    createdBy = String(userId);
+    const key = String(createdBy).toLowerCase();
+    if (!users[key]) {
+      users[key] = { email: key, name: null, photoUrl: null, created: Date.now(), role: 'student' };
+      // Do not create a password; this is a demo convenience record only
+      saveUsers();
+    }
+  }
+
   // find canonical lesson/week to grade against
   const lesson = data.lessons.find(l => l.id === lessonId);
   if (!lesson) return res.status(400).json({ error: 'invalid lessonId' });
   const wk = lesson.weeks.find(w => String(w.week) === String(week));
   if (!wk) return res.status(400).json({ error: 'invalid week' });
+
   // compute score: compare mcq answers
   let total = 0, correct = 0;
   (wk.exercises || []).forEach((ex, idx) => {
@@ -468,14 +576,11 @@ app.post('/api/attempts', (req, res) => {
       total++;
       const given = answers[idx];
       if (given === null || given === undefined) return;
-      // Normalize canonical correct value. Support new schema with answerId and option objects,
-      // and legacy numeric index answers.
       let canonicalCorrect = null;
       if (ex.hasOwnProperty('answerId')) {
         canonicalCorrect = String(ex.answerId);
       } else if (ex.hasOwnProperty('answer')) {
         if (typeof ex.answer === 'number') {
-          // If options are objects with ids, prefer that id as the canonical answer
           const opt = Array.isArray(ex.options) ? ex.options[ex.answer] : undefined;
           if (opt && typeof opt === 'object' && opt.id) canonicalCorrect = String(opt.id);
           else canonicalCorrect = String(ex.answer);
@@ -483,17 +588,12 @@ app.post('/api/attempts', (req, res) => {
           canonicalCorrect = String(ex.answer);
         }
       }
-
-      // Normalize given answer: could be an index, an id string, or numeric string
       let canonicalGiven = String(given);
-      // if given looks like an index and options exist, map to option id when possible
       if (!isNaN(Number(canonicalGiven)) && Array.isArray(ex.options)){
         const idxGiven = Number(canonicalGiven);
         const optGiven = ex.options[idxGiven];
         if (optGiven && typeof optGiven === 'object' && optGiven.id) canonicalGiven = String(optGiven.id);
       }
-
-      // Compare either as strings or numeric equality if both numeric
       const bothNumeric = !isNaN(Number(canonicalGiven)) && !isNaN(Number(canonicalCorrect));
       const isCorrect = bothNumeric ? (Number(canonicalGiven) === Number(canonicalCorrect)) : (canonicalGiven === canonicalCorrect);
       if (isCorrect) correct++;
@@ -501,7 +601,7 @@ app.post('/api/attempts', (req, res) => {
   });
   const score = total ? Math.round((correct / total) * 100) : null;
   const id = 'at_' + Math.random().toString(36).slice(2,9);
-  const rec = { id, lessonId, week: String(week), answers, score, createdBy: actor.email, created: Date.now() };
+  const rec = { id, lessonId, week: String(week), answers, score, createdBy: createdBy || 'anonymous', created: Date.now() };
   attemptsStore.unshift(rec);
   saveAttempts();
   res.json({ ok:true, attempt: rec });
@@ -510,16 +610,35 @@ app.post('/api/attempts', (req, res) => {
 // GET /api/progress/summary?lessonId=&week= - summary of attempts (best score, count, lastAttempt)
 app.get('/api/progress/summary', (req, res) => {
   const actor = getUserFromAuth(req);
-  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
-  const { lessonId, week } = req.query;
+  const { lessonId, week, userId, email } = req.query;
+  // allow unauthenticated summary requests only when userId/email is provided (demo)
+  if (!actor && !userId && !email) return res.status(401).json({ error: 'unauthenticated' });
+  let targetUser = null;
+  if (actor) {
+    // admin can request summaries for other users
+    if (actor.role === 'admin') targetUser = (userId || email) ? String(userId || email).toLowerCase() : null;
+    else targetUser = String(actor.email).toLowerCase();
+  } else {
+    targetUser = String(userId || email).toLowerCase();
+  }
+
   let list = attemptsStore.slice();
   if (lessonId) list = list.filter(a => a.lessonId === lessonId);
   if (week) list = list.filter(a => String(a.week) === String(week));
-  if (actor.role !== 'admin') list = list.filter(a => String(a.createdBy).toLowerCase() === String(actor.email).toLowerCase());
+  if (targetUser) list = list.filter(a => String(a.createdBy).toLowerCase() === String(targetUser).toLowerCase());
   const attemptsCount = list.length;
   const bestScore = attemptsCount ? Math.max(...list.map(a => (a.score===null||a.score===undefined)? -1 : a.score)) : null;
   const lastAttempt = attemptsCount ? list[0].created : null;
-  res.json({ lessonId: lessonId || null, week: week || null, attemptsCount, bestScore: bestScore >= 0 ? bestScore : null, lastAttempt });
+  // also include progressStore if available for the same user/lesson/week
+  let progressRec = null;
+  try{
+    if (targetUser && lessonId){
+      const pkey = `${String(targetUser).toLowerCase()}:${lessonId}`;
+      const p = progressStore[pkey];
+      if (p && p.byWeek && week && p.byWeek[String(week)]) progressRec = p.byWeek[String(week)];
+    }
+  }catch(e){}
+  res.json({ lessonId: lessonId || null, week: week || null, attemptsCount, bestScore: bestScore >= 0 ? bestScore : null, lastAttempt, progress: progressRec });
 });
 
 // GET /api/attempts?lessonId=&week= - returns attempts for the authenticated user (or all if admin)

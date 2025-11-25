@@ -1,1 +1,83 @@
-[]
+[
+  {
+    "id": "r_5uv3ccl",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_5uv3ccl-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763374621528
+  },
+  {
+    "id": "r_d82clxz",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_d82clxz-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763373259954
+  },
+  {
+    "id": "r_8r60ecx",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_8r60ecx-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763372581765
+  },
+  {
+    "id": "r_mhkdvcb",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_mhkdvcb-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763372476868
+  },
+  {
+    "id": "r_8qurnee",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_8qurnee-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763372425690
+  },
+  {
+    "id": "r_4374ox1",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_4374ox1-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763372305276
+  },
+  {
+    "id": "r_texf733",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_texf733-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763371427710
+  },
+  {
+    "id": "r_1f2zsmt",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_1f2zsmt-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763371093551
+  },
+  {
+    "id": "r_ych86e3",
+    "title": "test-sample",
+    "filename": "sample.txt",
+    "url": "/uploads/r_ych86e3-sample.txt",
+    "audience": "all",
+    "uploader": "admin@example.com",
+    "created": 1763370544809
+  }
+]

@@ -4,9 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Dashboard — redesign</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- cache-bust with version to avoid stale browser cache during development -->
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
-<body>
+<body class="student-dashboard">
   <!-- Styles moved to style.css for central management -->
 
   <div class="app-wrap">
@@ -33,48 +34,230 @@
         <button id="railSettings" class="rail-btn" title="Settings (Alt+7)" aria-pressed="false" aria-label="Settings">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM2 12a10 10 0 0 1 18-6 10 10 0 0 1 0 12 10 10 0 0 1-18-6z" fill="currentColor"/></svg>
         </button>
+        <!-- compact week list rendered in the rail for quick access -->
+        <div id="railWeekList" class="rail-week-list" aria-hidden="true" style="margin-top:6px"></div>
       </nav>
   <section class="main-area" id="mainArea">
-        <div class="top-row">
-          <div>
-            <h2 id="title">Welcome</h2>
-            <div class="muted">Interactive prototype — role-aware lessons & KPIs</div>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center">
-            <label class="muted">Role:</label>
-            <select id="roleSelect" class="role-select" aria-label="Choose role">
-              <option value="">All</option>
-              <option value="vendor">Vendor</option>
-              <option value="moto">Moto</option>
-            </select>
+        <div class="hero">
+          <div class="hero-sub">
+            <div class="hero-left">
+              <h1>Welcome back, <strong>John</strong>!</h1>
+              <p class="muted" style="margin-top:8px">Your students completed <strong style="color:#f59e0b">80%</strong> of the tasks.<br/>Progress is <strong style="color:#f97316">very good!</strong></p>
+              <div style="margin-top:14px;display:flex;gap:12px;align-items:center">
+                <button class="btn-primary">View Class</button>
+                <button class="btn">Export</button>
+              </div>
+            </div>
+            <div class="hero-right admin-only">
+              <!-- Big circular metric placeholder -->
+              <div style="width:220px;height:220px;margin-left:auto;background:linear-gradient(180deg,#fff,#fff);border-radius:50%;display:grid;place-items:center;box-shadow:0 8px 30px rgba(0,0,0,0.06)">
+                <div style="text-align:center;color:#0b1220"><div style="font-size:34px;font-weight:800">77%</div><div class="muted" style="font-size:13px">Working Hours</div></div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="kpi-row" aria-live="polite">
+        <div class="kpi-row admin-only" aria-live="polite" style="margin-top:6px">
           <div class="kpi card"><div class="label muted">Performance</div><div id="kpiPerformance" class="value">-</div></div>
           <div class="kpi card"><div class="label muted">Attendance</div><div id="kpiAttendance" class="value">-</div></div>
           <div class="kpi card"><div class="label muted">Completion</div><div id="kpiCompletion" class="value">-</div></div>
+          <div class="kpi card"><div class="label muted">Pass Threshold</div><div id="passThreshold" class="value">-</div><div id="thresholdSource" class="muted small" style="margin-top:6px">source: -</div></div>
         </div>
 
-        <section id="lessonsSection" class="mt-2">
-          <h3>Lessons</h3>
-          <div id="lessonsList"></div>
+        <section style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start;margin-top:12px">
+          <div>
+            <div class="card admin-only" style="padding:16px">
+              <h3 style="margin-bottom:8px">Students Progress <button class="btn link-btn" style="float:right">View List</button></h3>
+              <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:46px;height:46px;border-radius:8px;background:#eef6ff"></div>
+                  <div style="flex:1">
+                    <div style="font-weight:700">Amelia</div>
+                    <div style="height:10px;background:#f1f5f9;border-radius:8px;margin-top:6px;overflow:hidden"><div style="width:75%;height:100%;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div></div>
+                  </div>
+                  <div style="width:48px;text-align:right;color:#2563eb;font-weight:700">75%</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:46px;height:46px;border-radius:8px;background:#fff4ed"></div>
+                  <div style="flex:1">
+                    <div style="font-weight:700">John</div>
+                    <div style="height:10px;background:#f1f5f9;border-radius:8px;margin-top:6px;overflow:hidden"><div style="width:64%;height:100%;background:linear-gradient(90deg,#fb923c,#f97316)"></div></div>
+                  </div>
+                  <div style="width:48px;text-align:right;color:#f97316;font-weight:700">64%</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div style="width:46px;height:46px;border-radius:8px;background:#e6fdf6"></div>
+                  <div style="flex:1">
+                    <div style="font-weight:700">Micheal</div>
+                    <div style="height:10px;background:#f1f5f9;border-radius:8px;margin-top:6px;overflow:hidden"><div style="width:59%;height:100%;background:linear-gradient(90deg,#34d399,#10b981)"></div></div>
+                  </div>
+                  <div style="width:48px;text-align:right;color:#10b981;font-weight:700">59%</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card admin-only" style="padding:16px;margin-top:12px">
+              <h3>Working Hours</h3>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+                <div style="width:220px;height:220px;border-radius:50%;background:linear-gradient(180deg,#fff,#fff);display:grid;place-items:center;box-shadow:0 8px 30px rgba(0,0,0,0.06)">
+                  <div style="text-align:center;color:#0b1220"><div style="font-size:34px;font-weight:800">77%</div><div class="muted" style="font-size:13px">Today</div></div>
+                </div>
+                <div style="flex:1">
+                  <div class="muted">This Week</div>
+                  <div style="margin-top:8px">Average working hours per student: <strong>4.2h</strong></div>
+                  <div style="margin-top:12px" class="progress-summary-card">
+                    <strong>Attendance</strong>
+                    <div class="small muted">Present today: 78%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- right column: calendar + upcoming -->
+          <div>
+            <div class="card calendar-card admin-only">
+              <div class="calendar-header"><strong>November 2025</strong><div class="calendar-nav"><button class="icon-btn">◀</button><button class="icon-btn">▶</button></div></div>
+              <div class="calendar-grid" role="grid" aria-label="November 2025 calendar">
+                <!-- grid days (small static preview) -->
+                <div class="day header">Sun</div>
+                <div class="day header">Mon</div>
+                <div class="day header">Tue</div>
+                <div class="day header">Wed</div>
+                <div class="day header">Thu</div>
+                <div class="day header">Fri</div>
+                <div class="day header">Sat</div>
+                <div class="day"></div><div class="day"></div><div class="day"></div><div class="day"></div><div class="day"></div><div class="day"></div><div class="day">1</div>
+                <!-- more days omitted for brevity (static demo) -->
+              </div>
+            </div>
+            <div class="card mt-1 upcoming-card" style="margin-top:12px">
+              <h4 style="margin-bottom:8px">Upcoming</h4>
+              <div class="upcoming-item"><div style="flex:1"><strong>Orientation — Vendors</strong><div class="muted">10:00 AM</div></div></div>
+              <div class="upcoming-item"><div style="flex:1"><strong>Market safety talk</strong><div class="muted">2:30 PM</div></div></div>
+            </div>
+          </div>
         </section>
+        <!-- Lessons list: populated by dashboard.js -->
+        <section id="lessonsSection" class="mt-2" style="margin-top:12px">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <h3 style="margin:0">Lessons</h3>
+              <div class="muted small">Browse available lessons and open program weeks</div>
+            </div>
+            <div id="lessonsList" style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px"></div>
+          </div>
+        </section>
+        <!-- Scheduled Programs: vendor & motorcyclist 6-week courses -->
+        <section id="scheduledPrograms" style="margin-top:12px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+            <div class="card" style="padding:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <h4 style="margin:0">Scheduled: 6‑Week Vendor English</h4>
+                  <div class="muted small" style="margin-top:6px">A short practical program teaching vendors useful English for daily market activities.</div>
+                </div>
+                <div><button class="btn link-btn" onclick="window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',1)">Open</button></div>
+              </div>
+              <div style="margin-top:12px">
+                <strong>Modules</strong>
+                <ul style="list-style:none;padding-left:0;margin-top:8px">
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;background:#10b981;color:#fff;display:grid;place-items:center">✓</div> Module 1 — Greetings</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;background:#10b981;color:#fff;display:grid;place-items:center">✓</div> Module 2 — Listening & Phrases</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:4px;height:32px;border-left:4px solid #2563eb;margin-right:8px"></div> Module 3 — Everyday Questions</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;border:2px solid #94a3b8;display:grid;place-items:center;color:#94a3b8">○</div> Module 4 — Transactions</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;border:2px solid #94a3b8;display:grid;place-items:center;color:#94a3b8">○</div> Module 5 — Asking for Help</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:0"><div style="width:20px;height:20px;border-radius:999px;border:2px solid #94a3b8;display:grid;place-items:center;color:#94a3b8">○</div> Module 6 — Safety & Closing</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card" style="padding:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <h4 style="margin:0">Scheduled: 6‑Week Motorcyclist English</h4>
+                  <div class="muted small" style="margin-top:6px">Essential English modules for motorcyclists: directions, safety, and customer interactions.</div>
+                </div>
+                <div><button class="btn link-btn" onclick="window.puente_openLessonWeek && window.puente_openLessonWeek('moto_english_daily',1)">Open</button></div>
+              </div>
+              <div style="margin-top:12px">
+                <strong>Modules</strong>
+                <ul style="list-style:none;padding-left:0;margin-top:8px">
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;background:#6c5ce7;color:#fff;display:grid;place-items:center">✓</div> Module 1 — Directions & Landmarks</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;background:#6c5ce7;color:#fff;display:grid;place-items:center">✓</div> Module 2 — Fare Negotiation</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:4px;height:32px;border-left:4px solid #2563eb;margin-right:8px"></div> Module 3 — Safety Phrases</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;border:2px solid #94a3b8;display:grid;place-items:center;color:#94a3b8">○</div> Module 4 — Customer Service</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="width:20px;height:20px;border-radius:999px;border:2px solid #94a3b8;display:grid;place-items:center;color:#94a3b8">○</div> Module 5 — Emergency Language</li>
+                  <li style="display:flex;align-items:center;gap:10px;margin-bottom:0"><div style="width:20px;height:20px;border-radius:999px;border:2px solid #94a3b8;display:grid;place-items:center;color:#94a3b8">○</div> Module 6 — Directions Practice</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Demo: compact unauthenticated attempt submit (for demos) -->
+        <div class="card mt-2" style="padding:12px;max-width:520px">
+          <strong>Demo: Submit Attempt (unauthenticated)</strong>
+          <div style="margin-top:8px" class="muted small">Use for demos only — includes <code>userId</code> in the body.</div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <input id="demoLessonId" placeholder="lessonId" value="market_english_greetings" style="flex:1;min-width:180px" />
+            <input id="demoWeek" placeholder="week" value="1" style="width:80px" />
+            <input id="demoUserId" placeholder="userId" value="vendor_demo" style="width:160px" />
+            <input id="demoScore" placeholder="score (optional)" style="width:120px" />
+          </div>
+          <div style="margin-top:8px">
+            <button id="demoSubmit" class="btn">Submit Demo Attempt</button>
+            <button id="demoOpenExample" class="btn link-btn" style="margin-left:8px">Open Full Demo Page</button>
+          </div>
+          <pre id="demoOut" style="margin-top:8px;white-space:pre-wrap;background:#f7f8fa;padding:8px;border-radius:6px">No submission yet</pre>
+        </div>
+
+        <!-- Quick weeks duplicate in main canvas (hidden until a lesson opens) -->
+        <div id="weekListMain" class="course-sidebar card" style="margin-top:12px;padding:8px 12px;display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>Quick Weeks</strong></div>
+          <div id="weekListMainInner" style="display:flex;flex-wrap:wrap;gap:8px;max-height:140px;overflow:auto"></div>
+        </div>
         
+        <!-- Suggestion card shown to non-admin users so they know where admin tools live -->
+        <div id="adminSuggestion" class="card admin-suggestion" style="margin-top:12px;display:none;padding:0">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px">
+            <div style="font-size:20px;line-height:1">⚙️</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700">Admin tools</div>
+              <div class="muted small" style="margin-top:6px">Access reports, student lists, and settings. If you need admin access, contact your program administrator.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-left:8px">
+              <button class="btn" style="white-space:nowrap" onclick="window.open('/admin.html','_blank')">Open Admin Tools</button>
+              <button class="btn link-btn" style="white-space:nowrap" onclick="location.href='mailto:admin@example.com'">Contact Admin</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Program weeks for selected lesson (hidden until a lesson is opened) -->
   <section id="weeksSection" class="mt-2" style="display:none;opacity:0;transform:translateY(6px);transition:opacity .24s ease,transform .24s ease;">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
             <h3 id="weeksTitle">Program weeks</h3>
             <button id="backToLessons" class="btn link-btn" style="margin-left:auto">Back to lessons</button>
           </div>
-          <div id="weeksGrid" class="program-week-grid" aria-live="polite"></div>
-          <div id="weekDetail" class="card mt-1" style="display:none;margin-top:12px"></div>
+          <div style="display:flex;gap:16px;align-items:flex-start">
+            <div id="courseSidebar" class="course-sidebar card" style="width:260px;padding:8px 12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><strong>Course Material</strong><button id="toggleGrades" class="link-btn" aria-expanded="false">Grades</button></div>
+              <div id="weekList" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto"></div>
+              <div id="gradesSection" class="grades-card" style="display:none;margin-top:10px;padding:10px">
+                <strong>Grades</strong>
+                <div id="gradesSummary" style="margin-top:8px" class="muted small">No grades yet</div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div id="weekDetail" class="card mt-1" style="display:none;margin-top:12px"></div>
+            </div>
+          </div>
         </section>
       </section>
 
       <!-- Right-hand column: calendar, upcoming and notice board -->
       <aside class="right-column" aria-label="Right column widgets">
-        <div class="card calendar-card" aria-hidden="false">
+        <div class="card calendar-card admin-only" aria-hidden="false">
           <div class="calendar-header">
             <strong>January 2022</strong>
             <div class="calendar-nav">
@@ -136,13 +319,13 @@
           </div>
         </div>
 
-        <div class="card mt-1 upcoming-card">
+        <div class="card mt-1 upcoming-card admin-only">
           <h4 style="margin-bottom:8px">Upcoming</h4>
           <div class="upcoming-item"><div style="flex:1"><strong>Orientation — Vendors</strong><div class="muted">10:00 AM</div></div></div>
           <div class="upcoming-item"><div style="flex:1"><strong>Market safety talk</strong><div class="muted">2:30 PM</div></div></div>
         </div>
 
-        <div class="card mt-1 notice-board">
+        <div class="card mt-1 notice-board admin-only">
           <h4 style="margin-bottom:8px">Notice Board</h4>
           <div class="notice-item" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
             <div style="width:42px;height:42px;border-radius:8px;background:#f3f4f6"></div>
@@ -158,7 +341,36 @@
     </div>
   </div>
 
-  <script src="dashboard.js"></script>
+  <!-- cache-bust dashboard script so updates appear immediately during testing -->
+  <script src="dashboard.js?v=2"></script>
+  <script>
+    // Inline demo submission script for unauthenticated attempts
+    (function(){
+      const host = window.location.origin;
+      const $ = id => document.getElementById(id);
+      $('demoOpenExample').addEventListener('click', ()=> window.open('/unauth_attempt_example.html','_blank'));
+      $('demoSubmit').addEventListener('click', async ()=>{
+        const lessonId = $('demoLessonId').value;
+        const week = $('demoWeek').value;
+        const email = 'vendor@example.com';
+        const name = 'Vendor Demo';
+        const answers = [0,0];
+        if (!lessonId || !week){ $('demoOut').textContent = 'lessonId and week are required'; return; }
+        try{
+          // login first (legacy flow issues a token for the given email)
+          const loginRes = await fetch(host + '/api/login', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ email, name, role: 'student' }) });
+          const loginJson = await loginRes.json().catch(()=>null);
+          if (!loginRes.ok || !loginJson || !loginJson.token){ $('demoOut').textContent = 'Login failed: '+loginRes.status; return; }
+          const token = loginJson.token;
+
+          const payload = { lessonId, week, answers };
+          const res = await fetch(host + '/api/attempts', { method:'POST', headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer '+token }, body: JSON.stringify(payload) });
+          const j = await res.json().catch(()=>null);
+          $('demoOut').textContent = res.status + '\n' + JSON.stringify(j, null, 2);
+        }catch(e){ $('demoOut').textContent = 'Error: ' + String(e); }
+      });
+    })();
+  </script>
   <!-- calendar popover root (used by calendar JS) -->
   <div id="calendarPopover" class="popover-card" style="display:none"></div>
 </body>

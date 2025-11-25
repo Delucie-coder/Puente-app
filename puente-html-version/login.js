@@ -1,5 +1,6 @@
 // Small interaction script for the sign-up CTAs
 document.addEventListener('DOMContentLoaded', () => {
+  const API_BASE = (window.location.port === '5500') ? 'http://localhost:3010' : '';
   const form = document.getElementById('loginForm');
   const pwInput = document.getElementById('password');
   const pwToggle = document.getElementById('pwToggle');
@@ -25,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     // Attempt to authenticate with mock API; fallback to client-side demo if unavailable
-    fetch('/api/login', {
+    fetch(`${API_BASE}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
