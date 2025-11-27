@@ -447,11 +447,121 @@ app.post('/api/module-video', (req, res) => {
   if (!actor) return res.status(401).json({ error: 'unauthenticated' });
   if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
   const { lessonId, week, url } = req.body || {};
-  if (!lessonId || !week || !url) return res.status(400).json({ error: 'missing params' });
-  moduleVideos[lessonId] = moduleVideos[lessonId] || {};
-  moduleVideos[lessonId][String(week)] = String(url);
+  // allow lessonId to be omitted for convenience: fall back to the first lesson in data.lessons
+  const effectiveLessonId = lessonId || (data.lessons && data.lessons[0] && data.lessons[0].id);
+  if (!effectiveLessonId || !week || !url) return res.status(400).json({ error: 'missing params' });
+  moduleVideos[effectiveLessonId] = moduleVideos[effectiveLessonId] || {};
+  moduleVideos[effectiveLessonId][String(week)] = String(url);
   saveModuleVideos();
-  return res.json({ ok: true, lessonId, week: String(week), url });
+  return res.json({ ok: true, lessonId: effectiveLessonId, week: String(week), url });
+});
+
+// -----------------------
+// Module form links (persisted server-side)
+// -----------------------
+const MODULE_FORMS_FILE = path.join(__dirname, 'data', 'module_forms.json');
+let moduleForms = {}; // structure: { [lessonId]: { [week]: formUrl } }
+try {
+  if (fs.existsSync(MODULE_FORMS_FILE)) moduleForms = JSON.parse(fs.readFileSync(MODULE_FORMS_FILE, 'utf8')) || {};
+} catch (err) { console.warn('Could not load module_forms.json', err); moduleForms = {}; }
+
+function saveModuleForms(){ try { fs.writeFileSync(MODULE_FORMS_FILE, JSON.stringify(moduleForms, null, 2), 'utf8'); } catch(e){ console.warn('Failed to save module_forms', e); } }
+
+// GET /api/module-form?lessonId=&week=
+app.get('/api/module-form', (req, res) => {
+  const { lessonId, week } = req.query;
+  if (!lessonId || !week) return res.status(400).json({ error: 'missing params' });
+  const lessonMap = moduleForms[lessonId] || {};
+  const url = lessonMap[String(week)] || null;
+  return res.json({ lessonId, week: String(week), url });
+});
+
+// POST /api/module-form - admin required to set a canonical form url
+// body: { lessonId, week, url }
+app.post('/api/module-form', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const { lessonId, week, url } = req.body || {};
+  const effectiveLessonId = lessonId || (data.lessons && data.lessons[0] && data.lessons[0].id);
+  if (!effectiveLessonId || !week || !url) return res.status(400).json({ error: 'missing params' });
+  moduleForms[effectiveLessonId] = moduleForms[effectiveLessonId] || {};
+  moduleForms[effectiveLessonId][String(week)] = String(url);
+  saveModuleForms();
+  return res.json({ ok: true, lessonId: effectiveLessonId, week: String(week), url });
+});
+
+// -----------------------
+// Activities persistence
+// -----------------------
+const ACTIVITIES_FILE = path.join(__dirname, 'data', 'activities.json');
+let activitiesStore = {}; // { [lessonId]: { [week]: [activityStrings] } }
+try {
+  if (fs.existsSync(ACTIVITIES_FILE)) activitiesStore = JSON.parse(fs.readFileSync(ACTIVITIES_FILE, 'utf8')) || {};
+} catch (err) { console.warn('Could not load activities.json', err); activitiesStore = {}; }
+
+function saveActivities(){ try { fs.writeFileSync(ACTIVITIES_FILE, JSON.stringify(activitiesStore, null, 2), 'utf8'); } catch(e){ console.warn('Failed to save activities', e); } }
+
+// GET /api/activities?lessonId=&week=
+app.get('/api/activities', (req, res) => {
+  const { lessonId, week } = req.query;
+  if (!lessonId || !week) return res.status(400).json({ error: 'missing params' });
+  const lessonMap = activitiesStore[lessonId] || {};
+  const list = lessonMap[String(week)] || [];
+  return res.json({ lessonId, week: String(week), activities: list });
+});
+
+// POST /api/activities - admin required. body: { lessonId, week, activities: [string] }
+app.post('/api/activities', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const { lessonId, week, activities } = req.body || {};
+  const effectiveLessonId = lessonId || (data.lessons && data.lessons[0] && data.lessons[0].id);
+  if (!effectiveLessonId || !week || !Array.isArray(activities)) return res.status(400).json({ error: 'missing params' });
+  activitiesStore[effectiveLessonId] = activitiesStore[effectiveLessonId] || {};
+  activitiesStore[effectiveLessonId][String(week)] = activities.slice();
+  saveActivities();
+  return res.json({ ok: true, lessonId: effectiveLessonId, week: String(week), activities: activitiesStore[effectiveLessonId][String(week)] });
+});
+
+// -----------------------
+// Aggregated progress
+// -----------------------
+// GET /api/progress/aggregated?lessonId=
+app.get('/api/progress/aggregated', (req, res) => {
+  const { lessonId } = req.query;
+  if (!lessonId) return res.status(400).json({ error: 'missing lessonId' });
+  // aggregate attemptsStore and progressStore by week
+  const weeks = {};
+  attemptsStore.forEach(a => {
+    if (a.lessonId !== lessonId) return;
+    const w = String(a.week || '0');
+    weeks[w] = weeks[w] || { attempts: 0, totalScore: 0, bestScores: [] };
+    if (typeof a.score === 'number') { weeks[w].attempts++; weeks[w].totalScore += a.score; weeks[w].bestScores.push(a.score); }
+  });
+  // include progressStore completed counts
+  Object.keys(progressStore).forEach(k => {
+    const p = progressStore[k];
+    if (!p || p.lessonId !== lessonId) return;
+    Object.keys(p.byWeek || {}).forEach(w => {
+      weeks[w] = weeks[w] || { attempts: 0, totalScore: 0, bestScores: [] };
+      const rec = p.byWeek[w];
+      if (rec && typeof rec.bestScore === 'number') {
+        weeks[w].bestScores.push(rec.bestScore);
+      }
+    });
+  });
+  // materialize summary
+  const summary = Object.keys(weeks).sort((a,b)=>Number(a)-Number(b)).map(w => {
+    const obj = weeks[w];
+    const count = obj.attempts || obj.bestScores.length || 0;
+    const avg = (count && obj.totalScore) ? Math.round(obj.totalScore / (obj.attempts || 1)) : null;
+    const passCount = (obj.bestScores || []).filter(s => typeof s === 'number' && s >= 70).length;
+    const passRate = count ? Math.round((passCount / count) * 100) : null;
+    return { week: w, attempts: obj.attempts || 0, avgScore: avg, passRate };
+  });
+  res.json({ lessonId, summary });
 });
 
 // GET /api/resources
@@ -607,6 +717,24 @@ app.post('/api/attempts', (req, res) => {
   res.json({ ok:true, attempt: rec });
 });
 
+// POST /api/chart-image - accept base64 PNG and save under uploads/charts (admin only)
+app.post('/api/chart-image', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const { lessonId, imageBase64, filename } = req.body || {};
+  if (!imageBase64) return res.status(400).json({ error: 'missing imageBase64' });
+  try{
+    const CHARTS_DIR = path.join(UPLOADS_DIR, 'charts');
+    if (!fs.existsSync(CHARTS_DIR)) fs.mkdirSync(CHARTS_DIR, { recursive: true });
+    const safeName = (filename || `chart_${lessonId||'all'}_${Date.now()}`).replace(/[^a-z0-9.\-\_]/gi, '_') + '.png';
+    const outPath = path.join(CHARTS_DIR, safeName);
+    fs.writeFileSync(outPath, Buffer.from(String(imageBase64), 'base64'));
+    const url = `/uploads/charts/${safeName}`;
+    return res.json({ ok: true, url, filename: safeName });
+  }catch(e){ console.error('Failed to save chart image', e); return res.status(500).json({ error: 'failed' }); }
+});
+
 // GET /api/progress/summary?lessonId=&week= - summary of attempts (best score, count, lastAttempt)
 app.get('/api/progress/summary', (req, res) => {
   const actor = getUserFromAuth(req);
@@ -696,6 +824,44 @@ app.delete('/api/assignments/:id', (req, res) => {
   const removed = assignmentsStore.splice(idx,1)[0];
   saveAssignments();
   res.json({ ok:true, removed:true, assignment: removed });
+});
+
+// -----------------------
+// Announcements (admin -> learners)
+// -----------------------
+const ANNOUNCEMENTS_FILE = path.join(__dirname, 'data', 'announcements.json');
+let announcementsStore = [];
+try {
+  if (fs.existsSync(ANNOUNCEMENTS_FILE)) announcementsStore = JSON.parse(fs.readFileSync(ANNOUNCEMENTS_FILE, 'utf8')) || [];
+} catch (err) { console.warn('Could not load announcements.json', err); announcementsStore = []; }
+
+function saveAnnouncements(){ try { fs.writeFileSync(ANNOUNCEMENTS_FILE, JSON.stringify(announcementsStore, null, 2), 'utf8'); } catch(e){ console.warn('Failed to save announcements', e); } }
+
+// GET /api/announcements?since=<timestamp>&audience=all|students
+app.get('/api/announcements', (req, res) => {
+  const since = Number(req.query.since) || 0;
+  const audience = req.query.audience || 'all';
+  // return announcements newer than `since` (ms) and matching audience
+  const list = announcementsStore.filter(a => {
+    if (a.created && Number(a.created) <= since) return false;
+    if (!a.audience || a.audience === 'all') return true;
+    return a.audience === audience;
+  });
+  res.json({ announcements: list });
+});
+
+// POST /api/announcements - admin only. body: { title, body, audience }
+app.post('/api/announcements', (req, res) => {
+  const actor = getUserFromAuth(req);
+  if (!actor) return res.status(401).json({ error: 'unauthenticated' });
+  if (actor.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  const { title, body: msgBody, audience } = req.body || {};
+  if (!title || !msgBody) return res.status(400).json({ error: 'missing title or body' });
+  const id = 'ann_' + Math.random().toString(36).slice(2,9);
+  const rec = { id, title: String(title), body: String(msgBody), audience: audience || 'all', created: Date.now(), createdBy: actor.email || null };
+  announcementsStore.unshift(rec);
+  saveAnnouncements();
+  return res.json({ ok:true, announcement: rec });
 });
 
 // Start server (default port changed to 3001 to avoid conflicts on developer machines)

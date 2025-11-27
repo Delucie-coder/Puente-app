@@ -1,42 +1,583 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Admin — Module Videos</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-    body{font-family:Segoe UI,Arial;margin:18px;background:#f7fafc;color:#111}
-    .card{background:#fff;padding:12px;border-radius:8px;box-shadow:0 4px 14px rgba(2,6,23,0.06);margin-bottom:12px}
-    .muted{color:#6b7280}
-    .row{display:flex;gap:12px;align-items:center}
-    select,input{padding:8px;border-radius:6px;border:1px solid #e5e7eb}
-    button.btn{padding:8px 12px;border-radius:6px;border:0;background:#0ea5a4;color:#fff}
-    button.warn{background:#ef4444}
-    label{display:block;margin-bottom:6px;font-weight:600}
-    .week-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    .week-item{padding:8px;border:1px solid #e6edf0;border-radius:6px;background:#fff}
-    .small{font-size:13px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puente Administrator Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --admin-primary: #059669; /* Emerald 600 */
+        }
+        .admin-bg { background-color: #f8fafc; } /* Slate 50 */
+        .rail-btn.active {
+            background-color: var(--admin-primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+
+    <!-- Firebase Imports for Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        setLogLevel('Debug');
+
+        // Global environment variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const API_KEY = ""; // Placeholder for Canvas runtime key
+
+        let db, auth, userId = null;
+        let isAuthReady = false;
+
+        // Mocked User Data for demonstration (replace with real user IDs in production)
+        // Use the requested demo users so admin can inspect their performance easily
+        const MOCKED_USERS = [
+            'guesslucie',
+            'delucie'
+        ];
+
+        // Demo metrics for the selected mock users — used to generate deterministic report values
+        const DEMO_USER_METRICS = {
+            'guesslucie': { quiz: 92.3, completionPercent: 88, weeklyProgress: [100,95,90,85,80,75] },
+            'delucie': { quiz: 78.5, completionPercent: 56, weeklyProgress: [60,62,55,50,48,45] }
+        };
+
+        // Lesson Data Structure (for Content Management Tab)
+        const LESSON_DATA = [
+            { id: 'week_1', week: 1, title: 'Greetings & Basic Transactions', content: 'Essential phrases for welcoming customers and handling initial inquiries.' },
+            { id: 'week_2', week: 2, title: 'Handling Inventory & Stock', content: 'Vocabulary for product availability, sizing, and colors.' },
+            { id: 'week_3', week: 3, title: 'Promotions & Discounts', content: 'Phrases for explaining special offers, sales, and haggling.' },
+            { id: 'week_4', week: 4, title: 'Handling Money & Change', content: 'Practicing numbers, counting change, and payment methods.' },
+            { id: 'week_5', week: 5, title: 'Dealing with Difficult Customers', content: 'Phrases for calmly resolving issues, returns, and complaints.' },
+            { id: 'week_6', week: 6, title: 'Building Customer Loyalty', content: 'Polite ways to ask for feedback and invite return visits.' },
+        ];
+        
+        // Firestore Path for user-specific data (e.g., bookmarks)
+        const getBookmarkDocRef = (uid) => doc(db, 'artifacts', appId, 'users', uid, 'data', 'bookmarks');
+
+        // Utility functions (Modal)
+        function showModal(title, message) {
+            const modal = document.getElementById('customModal');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('modalConfirm').classList.add('hidden');
+            modal.classList.remove('hidden');
+        }
+        window.showModal = showModal;
+
+        // --- FIREBASE INITIALIZATION & AUTH ---
+
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        document.getElementById('userIdDisplay').textContent = `Admin ID: ${userId}`;
+                    } else {
+                        isAuthReady = true;
+                        document.getElementById('userIdDisplay').textContent = `Admin ID: Not Signed In (Anon)`;
+                    }
+                    // Load the default tab once auth state is known
+                    loadTab('users');
+                });
+            } catch(error) {
+                console.error("Firebase initialization failed:", error);
+                // Fallback UI load
+                loadTab('users');
+            }
+        }
+
+        // --- ADMIN SPECIFIC FUNCTIONS ---
+
+        function loadTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(`${tabName}Content`).classList.remove('hidden');
+
+            document.querySelectorAll('.rail-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+                btn.classList.toggle('bg-gray-100', btn.dataset.tab !== tabName);
+                btn.classList.toggle('text-gray-700', btn.dataset.tab !== tabName);
+            });
+
+            if (tabName === 'users') {
+                renderUserList();
+            } else if (tabName === 'content') {
+                renderLessonList();
+            } else if (tabName === 'reports') {
+                renderReports();
+            }
+        }
+        window.loadTab = loadTab;
+
+        function renderUserList() {
+            const listContainer = document.getElementById('userListContainer');
+            listContainer.innerHTML = '';
+            
+            MOCKED_USERS.forEach(uid => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-left p-3 my-1 bg-gray-50 hover:bg-emerald-100 rounded-lg transition text-gray-800 font-mono text-sm shadow-sm';
+                button.textContent = uid;
+                button.onclick = () => loadUserProgress(uid);
+                listContainer.appendChild(button);
+            });
+            document.getElementById('userDetailsContainer').innerHTML = '<p class="text-gray-500 italic p-4">Select a User ID to view their progress.</p>';
+        }
+
+        async function loadUserProgress(targetUid) {
+            const detailsContainer = document.getElementById('userDetailsContainer');
+            detailsContainer.innerHTML = '<div class="text-center p-8"><svg class="animate-spin h-8 w-8 text-emerald-500 mx-auto" viewBox="0 0 24 24"><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="mt-2 text-emerald-600">Loading User Data...</p></div>';
+
+            // Try to fetch bookmarks only if Firebase is initialized. Otherwise continue with demo data.
+            let bookmarks = {};
+            if (isAuthReady && db) {
+                try {
+                    const docSnap = await getDoc(getBookmarkDocRef(targetUid));
+                    bookmarks = docSnap.exists() ? docSnap.data().lessons : {};
+                } catch (err) {
+                    console.error('Error fetching bookmarks, continuing with empty list.', err);
+                    bookmarks = {};
+                }
+            } else {
+                // No Firestore available in this environment; use empty bookmarks and continue
+                bookmarks = {};
+            }
+
+            let bookmarkListHTML = Object.keys(bookmarks).length > 0
+                ? Object.keys(bookmarks).map(lessonId => {
+                    const lesson = LESSON_DATA.find(l => l.id === lessonId);
+                    const title = lesson ? lesson.title : lessonId;
+                    const weekNum = lesson ? lesson.week : '?';
+                    return `<li class="p-2 border-b border-gray-100 flex justify-between items-center text-sm"><span class="font-medium text-emerald-700">W${weekNum}</span><span>${title}</span></li>`;
+                }).join('')
+                : '<p class="text-gray-500 italic">No lessons bookmarked.</p>';
+                
+                // 2. Mock Quiz/Activity Progress
+                // For demo purposes provide deterministic example metrics for known users
+                let mockProgress = {};
+                if (targetUid === 'guesslucie') {
+                    mockProgress = {
+                        'Quiz Average': '92.3%',
+                        'Activities Completed': '16/18 tasks',
+                        'Last Active': new Date(Date.now() - 2 * 86400000).toLocaleDateString()
+                    };
+                } else if (targetUid === 'delucie') {
+                    mockProgress = {
+                        'Quiz Average': '78.5%',
+                        'Activities Completed': '10/18 tasks',
+                        'Last Active': new Date(Date.now() - 7 * 86400000).toLocaleDateString()
+                    };
+                } else {
+                    mockProgress = {
+                        'Quiz Average': `${(Math.random() * 20 + 70).toFixed(1)}%`,
+                        'Activities Completed': `${Math.floor(Math.random() * 10) + 12}/18 tasks`,
+                        'Last Active': new Date(Date.now() - Math.random() * 86400000 * 30).toLocaleDateString()
+                    };
+                }
+
+                const progressHTML = Object.entries(mockProgress).map(([key, value]) => 
+                    `<div class="flex justify-between p-2 border-b border-gray-200">
+                        <span class="text-gray-600">${key}</span>
+                        <span class="font-bold text-gray-800">${value}</span>
+                    </div>`
+                ).join('');
+
+
+                detailsContainer.innerHTML = `
+                    <div class="p-4">
+                        <h3 class="text-xl font-bold text-emerald-700 mb-4">Progress for: <span class="font-mono text-base">${targetUid}</span></h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Summary Metrics -->
+                            <div class="card bg-white rounded-xl p-4 shadow-md">
+                                <h4 class="font-semibold text-lg border-b pb-2 mb-2">Metrics Summary</h4>
+                                ${progressHTML}
+                            </div>
+                            
+                            <!-- Bookmarked Lessons -->
+                            <div class="card bg-white rounded-xl p-4 shadow-md">
+                                <h4 class="font-semibold text-lg border-b pb-2 mb-2">Bookmarked Lessons</h4>
+                                <ul class="space-y-1 max-h-48 overflow-y-auto">
+                                    ${bookmarkListHTML}
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Weekly progress chart (visual) -->
+                        <div class="mt-6">
+                            <div class="card bg-white rounded-xl p-4 shadow-md">
+                                <h4 class="font-semibold text-lg border-b pb-2 mb-3">Weekly Progress</h4>
+                                <div class="flex items-end gap-3 h-36 px-2">
+                                    ${(() => {
+                                        const weekly = (DEMO_USER_METRICS && DEMO_USER_METRICS[targetUid] && DEMO_USER_METRICS[targetUid].weeklyProgress) || [];
+                                        // If no weekly array, fallback to using completion percent as a single-series generator
+                                        const series = weekly.length ? weekly : (function(){
+                                            const pct = parseFloat((mockProgress['Quiz Average']||'0').replace('%','')) || 0;
+                                            return Array.from({length:6}, (_,i)=> Math.max(5, Math.round(pct - i*5)) );
+                                        })();
+                                        return series.map((v,i)=>{
+                                            const h = Math.max(6, Math.round((v/100) * 200));
+                                            return `<div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center">
+                                                <div title="Week ${i+1}: ${v}%" style="width:100%;height:${h}px;background:#10b981;border-radius:6px"></div>
+                                                <div class="text-xs text-gray-600 mt-2">W${i+1}</div>
+                                            </div>`;
+                                        }).join('');
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 text-center">
+                            <button class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition" onclick="showModal('Action Required', 'This would initiate a data purge or account suspension for ${targetUid}.')">
+                                Take Admin Action
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+            
+        }
+
+        function renderLessonList() {
+            const contentList = document.getElementById('lessonContentList');
+            contentList.innerHTML = '';
+
+            LESSON_DATA.forEach(lesson => {
+                const card = document.createElement('div');
+                card.className = 'card bg-white p-4 rounded-xl shadow-md border-l-4 border-emerald-400';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-semibold uppercase text-emerald-500">Week ${lesson.week}</span>
+                            <h3 class="text-lg font-bold text-gray-800">${lesson.title}</h3>
+                        </div>
+                        <button class="text-emerald-500 hover:text-emerald-700 transition" 
+                            onclick="showModal('Content Editing', 'Editing feature for Week ${lesson.week} content is mocked. This button would open a rich text editor.')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zm-3.536 3.536l-8.586 8.586V19h3.394l8.586-8.586-3.394-3.394z"/></svg>
+                        </button>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">${lesson.content}</p>
+                `;
+                contentList.appendChild(card);
+            });
+        }
+
+        function renderReports() {
+             const reportsOutput = document.getElementById('reportsOutput');
+             // Aggregate demo metrics where available
+             const totalUsers = MOCKED_USERS.length;
+             const metrics = MOCKED_USERS.map(u => DEMO_USER_METRICS[u]).filter(Boolean);
+             const avgQuiz = metrics.length ? (metrics.reduce((s,m)=>s+m.quiz,0)/metrics.length) : 0;
+             const avgCompletion = metrics.length ? (metrics.reduce((s,m)=>s+m.completionPercent,0)/metrics.length) : 0;
+
+             const bars = [...Array(12)].map(() => {
+                 const h = Math.floor(Math.random() * 100) + 50;
+                 return `<div class="w-4 bg-emerald-400 rounded-t-lg transition hover:bg-emerald-700" style="height: ${h}px;" title="Activity: ${h}"></div>`;
+             }).join('');
+
+             reportsOutput.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Metric Card 1 -->
+                    <div class="card p-6 bg-white rounded-xl shadow-lg border-t-4 border-emerald-500">
+                        <div class="text-sm font-medium text-gray-500">Total Users Tracked</div>
+                        <div class="text-3xl font-bold text-emerald-800 mt-1">${totalUsers}</div>
+                        <div class="text-sm text-gray-500 mt-2">Mocked demo users included in this report.</div>
+                    </div>
+                    <!-- Metric Card 2 -->
+                    <div class="card p-6 bg-white rounded-xl shadow-lg border-t-4 border-emerald-500">
+                        <div class="text-sm font-medium text-gray-500">Avg. Quiz Score (Demo Users)</div>
+                        <div class="text-3xl font-bold text-emerald-800 mt-1">${avgQuiz.toFixed(1)}%</div>
+                        <div class="text-sm text-gray-500 mt-2">Average across the selected demo users.</div>
+                    </div>
+                    <!-- Metric Card 3 -->
+                    <div class="card p-6 bg-white rounded-xl shadow-lg border-t-4 border-emerald-500">
+                        <div class="text-sm font-medium text-gray-500">W1-W3 Completion Rate (Avg)</div>
+                        <div class="text-3xl font-bold text-emerald-800 mt-1">${Math.round(avgCompletion)}%</div>
+                        <div class="text-sm text-gray-500 mt-2">Average completion for first 3 weeks.</div>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold text-gray-800 mt-8 mb-4">Engagement Over Time (Mock Chart)</h3>
+                <div class="card bg-white p-6 rounded-xl shadow-lg">
+                    <div class="h-48 flex items-end justify-around p-4">
+                        ${bars}
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>Nov 1</span><span>...</span><span>Nov 15</span><span>...</span><span>Nov 30</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- GEMINI API: CONTENT CRITIQUE TOOL ---
+
+        async function critiqueContent() {
+            const contentArea = document.getElementById('critiqueContentInput');
+            const critiqueOutput = document.getElementById('critiqueOutput');
+            const critiqueButton = document.getElementById('critiqueButton');
+
+            const content = contentArea.value.trim();
+            if (!content) {
+                showModal("Input Required", "Please enter some content to critique.");
+                return;
+            }
+
+            const originalText = critiqueButton.innerHTML;
+            critiqueButton.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...';
+            critiqueButton.disabled = true;
+            critiqueOutput.innerHTML = '<p class="text-center text-emerald-500 italic p-4">Awaiting critique from the AI Model...</p>';
+
+            const systemPrompt = "You are an expert educational content editor. Provide a detailed, constructive critique of the provided text. Analyze the clarity, tone (is it encouraging and professional?), vocabulary difficulty (suggest a grade level, e.g., '6th Grade ESL'), and suggest 1-2 specific improvements using markdown formatting.";
+            
+            const userQuery = `Critique the following lesson content for a Vendor English module: "${content}"`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                model: "gemini-2.5-flash-preview-09-2025"
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+            
+            let response, result;
+            try {
+                // Exponential backoff retry logic
+                let success = false;
+                let delay = 1000;
+                for (let i = 0; i < 3; i++) {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        result = await response.json();
+                        success = true;
+                        break;
+                    }
+                    if (i < 2) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; 
+                    }
+                }
+                if (!success) throw new Error("API call failed after retries.");
+
+                const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate critique.";
+                
+                // Simple markdown to HTML conversion for display
+                const htmlContent = generatedText
+                    .replace(/### (.*)/g, '<h3>$1</h3>')
+                    .replace(/## (.*)/g, '<h2>$1</h2>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/(\r\n|\n|\r)/gm, '<br>')
+                    .replace(/<br>/g, (match, offset, string) => {
+                        // Only add <br> if it's not immediately followed by another <br> or a block tag
+                        const nextChar = string.substring(offset + match.length, offset + match.length + 4);
+                        return (nextChar === '<br>' || nextChar.startsWith('<h') || nextChar.startsWith('<ul>')) ? '' : '<br>';
+                    })
+                    .replace(/<br><br>/g, '</p><p>')
+                    .replace(/^\s*<br>/, '')
+                    .replace(/<br>\s*$/, '');
+                
+                critiqueOutput.innerHTML = `<div class="prose max-w-none text-sm p-4">${htmlContent}</div>`;
+                
+            } catch (error) {
+                console.error("Critique generation error:", error);
+                critiqueOutput.innerHTML = '<p class="text-red-500 p-4">Error generating critique. Please check the console.</p>';
+            } finally {
+                critiqueButton.innerHTML = originalText;
+                critiqueButton.disabled = false;
+            }
+        }
+        window.critiqueContent = critiqueContent;
+
+        // --- GLOBAL SETUP ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            
+            // Wire up tab buttons
+            document.querySelectorAll('.rail-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    loadTab(e.currentTarget.dataset.tab);
+                });
+            });
+
+            // Wire up the critique button
+            document.getElementById('critiqueButton').addEventListener('click', window.critiqueContent);
+
+            // Wire up contact admin (mocked)
+            document.getElementById('contactAdminBtn').addEventListener('click', () => {
+                 showModal("Admin Support", "As an administrator, you should contact the platform's root support team at devops@puenteapp.org.");
+            });
+        });
+    </script>
 </head>
-<body>
-  <h2>Admin — Module Videos</h2>
-  <div class="card">
-    <div class="row" style="margin-bottom:8px">
-      <div style="flex:1">
-        <label for="amv_lessons">Lesson</label>
-        <select id="amv_lessons"><option>Loading...</option></select>
-      </div>
-      <div style="width:220px">
-        <label>&nbsp;</label>
-        <div style="display:flex;gap:8px">
-          <button class="btn" id="amv_refresh">Refresh</button>
-          <button class="btn" id="amv_logout">Logout</button>
+<body class="admin-bg min-h-screen font-sans">
+
+    <!-- Custom Modal Structure -->
+    <div id="customModal" class="hidden fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
+            <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-4">Modal Title</h3>
+            <p id="modalMessage" class="text-gray-600 mb-6">Modal message content.</p>
+            <div class="flex justify-end space-x-3">
+                <button id="modalClose" class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition" onclick="document.getElementById('customModal').classList.add('hidden')">Close</button>
+                <button id="modalConfirm" class="px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition hidden">Confirm</button>
+            </div>
         </div>
-      </div>
     </div>
-    <div id="amv_weeks" class="week-grid"></div>
-    <div id="amv_status" class="muted small" style="margin-top:8px"></div>
-  </div>
-  <script src="admin-module-videos.js"></script>
+
+    <div class="max-w-7xl mx-auto pt-4 pb-12 px-4 md:px-8">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center gap-4 mb-6 p-4 bg-white rounded-xl shadow-lg border-b-4 border-emerald-600">
+            
+            <!-- Logo and App Title -->
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-600 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M12 17V8"></path>
+                        <path d="M16 14l-4 3-4-3"></path>
+                    </svg>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-extrabold text-2xl text-emerald-800">Puente Admin Platform</div>
+                    <div class="text-sm font-medium text-gray-500">System Oversight</div>
+                </div>
+            </div>
+
+            <!-- Dashboard Title and User Info -->
+            <div class="text-right flex flex-col items-end">
+                <div class="text-xl font-extrabold text-emerald-900">Administrator View</div>
+                <div id="userIdDisplay" class="text-sm text-gray-500 mt-1 font-mono">Admin ID: Loading...</div>
+            </div>
+        </header>
+
+        <!-- Main Application Layout -->
+        <div class="flex gap-6">
+            
+            <!-- Left Navigation Rail -->
+            <nav class="left-rail w-20 flex flex-col p-3 space-y-3 bg-white rounded-xl shadow-lg h-full sticky top-4 hidden sm:flex" aria-label="Admin navigation">
+                
+                <!-- Users Tab -->
+                <button data-tab="users" class="rail-btn p-3 rounded-xl flex flex-col items-center text-gray-700 hover:bg-emerald-100 transition active" title="Users" aria-label="Users">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m12-2a6.9 6.9 0 00-14 0m14 0H5a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2h-1a3 3 0 003-3v-3a4 4 0 00-4-4H8a4 4 0 00-4 4v3a3 3 0 003 3h1a2 2 0 012-2h4a2 2 0 012 2z"/></svg>
+                    <span class="text-xs mt-1">Users</span>
+                </button>
+
+                <!-- Content Tab -->
+                <button data-tab="content" class="rail-btn p-3 rounded-xl flex flex-col items-center text-gray-700 hover:bg-emerald-100 transition" title="Content" aria-label="Content Management">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <span class="text-xs mt-1">Content</span>
+                </button>
+
+                <!-- Reports Tab -->
+                <button data-tab="reports" class="rail-btn p-3 rounded-xl flex flex-col items-center text-gray-700 hover:bg-emerald-100 transition" title="Reports" aria-label="Analytics Reports">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m4 0a1 1 0 001 1h4a1 1 0 001-1m-7 0h7"></path><path stroke-linecap="round" stroke-linejoin="round" d="M14 17h6m-3-3l3 3m0 0l-3 3"></path></svg>
+                    <span class="text-xs mt-1">Reports</span>
+                </button>
+
+                 <!-- Tools Tab -->
+                <button data-tab="tools" class="rail-btn p-3 rounded-xl flex flex-col items-center text-gray-700 hover:bg-emerald-100 transition" title="Tools" aria-label="Admin Tools">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span class="text-xs mt-1">Tools</span>
+                </button>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="main-area flex-1 min-h-[80vh]">
+                
+                <!-- Users Management Tab Content -->
+                <section id="usersContent" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- User List Panel -->
+                    <div class="lg:col-span-1 card bg-white p-4 rounded-xl shadow-lg h-full">
+                        <h2 class="text-xl font-bold text-gray-800 border-b pb-3 mb-4">Tracked Users</h2>
+                        <div id="userListContainer" class="space-y-2 max-h-[70vh] overflow-y-auto">
+                            <!-- User buttons will be injected here -->
+                        </div>
+                    </div>
+                    <!-- User Details Panel -->
+                    <div class="lg:col-span-2 card bg-white rounded-xl shadow-lg h-full">
+                        <h2 class="text-xl font-bold text-gray-800 border-b p-4">User Progress Overview</h2>
+                        <div id="userDetailsContainer" class="p-0">
+                             <!-- Progress details will be injected here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Content Management Tab Content -->
+                <section id="contentContent" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Module Content Overview</h2>
+                    <div id="lessonContentList" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Lesson cards will be injected here -->
+                    </div>
+                </section>
+
+                <!-- Reports/Analytics Tab Content -->
+                <section id="reportsContent" class="tab-content hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Analytics Dashboard</h2>
+                    <div id="reportsOutput">
+                        <!-- Report content will be injected here -->
+                    </div>
+                </section>
+
+                <!-- Admin Tools Tab Content (Gemini Content Critique) -->
+                <section id="toolsContent" class="tab-content hidden">
+                    <div class="card bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-emerald-700 mb-4">AI Content Critique Tool</h2>
+                        <p class="text-gray-600 mb-6">Use the Gemini model to instantly review lesson content for clarity, tone, and grade-level suitability.</p>
+
+                        <div class="space-y-4">
+                            <!-- Input Area -->
+                            <div>
+                                <label for="critiqueContentInput" class="block text-sm font-medium text-gray-700 mb-2">Lesson Content to Analyze (Max ~500 words)</label>
+                                <textarea id="critiqueContentInput" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500" placeholder="Paste lesson text here..."></textarea>
+                            </div>
+
+                            <!-- Button -->
+                            <button id="critiqueButton" class="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition shadow-md flex items-center justify-center">
+                                Run Content Critique
+                            </button>
+                            
+                            <!-- Output Area -->
+                            <div class="mt-6 border-t pt-4">
+                                <h3 class="text-lg font-bold text-gray-800 mb-2">AI Critique Results:</h3>
+                                <div id="critiqueOutput" class="min-h-[100px] bg-gray-50 p-4 border border-gray-200 rounded-lg">
+                                    <p class="text-gray-500 italic">Results will appear here after analysis.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+
+        <!-- Footer / Contact -->
+        <footer class="mt-8 text-center pt-4 border-t border-gray-300">
+            <button id="contactAdminBtn" class="px-4 py-2 text-gray-600 font-semibold rounded-lg border border-gray-300 hover:bg-gray-100 transition">Contact Platform Support</button>
+        </footer>
+    </div>
+
 </body>
 </html>

@@ -1,144 +1,725 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vendor Dashboard — Puente</title>
-  <link rel="stylesheet" href="style.css?v=2">
-  <style>
-    /* small vendor-only tweaks */
-    .vendor-hero { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px;border-radius:8px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04); }
-    .vendor-kpis { display:flex;gap:12px;margin-top:12px }
-    .vendor-kpi { background:#fff;padding:12px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.04);flex:1 }
-    .lessons-list { margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px }
-    .lesson-card { padding:12px;border-radius:8px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04) }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puente Vendor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .rail-btn.active {
+            background-color: #059669; /* Emerald 600 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .rail-week-item {
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+        .rail-week-item.selected,
+        .rail-week-item.bg-emerald-600 {
+            background-color: #059669; /* Emerald 600 */
+        }
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        /* Custom scrollbar for better look */
+        .left-rail::-webkit-scrollbar { width: 4px; }
+        .left-rail::-webkit-scrollbar-thumb { background-color: #6ee7b7; border-radius: 2px; }
+    </style>
+
+    <!-- Firebase Imports for Firestore -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Log all Firestore activity for debugging
+        setLogLevel('Debug');
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const API_KEY = ""; // Using placeholder, Canvas provides key at runtime
+
+        let db, auth, userId = null;
+        let isAuthReady = false;
+        let currentLesson = null;
+
+        // Utility functions for audio conversion (required for TTS PCM data)
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const bytesPerSample = bitsPerSample / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            
+            const pcmLength = pcmData.length * bytesPerSample;
+            const totalLength = pcmLength + 44; // 44 bytes for WAV header
+
+            const buffer = new ArrayBuffer(totalLength);
+            const view = new DataView(buffer);
+
+            // RIFF chunk
+            view.setUint32(0, 0x52494646, false); // "RIFF"
+            view.setUint32(4, totalLength - 8, true); // Size of file - 8
+            view.setUint32(8, 0x57415645, false); // "WAVE"
+
+            // fmt chunk
+            view.setUint32(12, 0x666d7420, false); // "fmt "
+            view.setUint32(16, 16, true); // Subchunk size (16 for PCM)
+            view.setUint16(20, 1, true); // Audio format (1 for PCM)
+            view.setUint16(22, numChannels, true); // Number of channels
+            view.setUint32(24, sampleRate, true); // Sample rate
+            view.setUint32(28, byteRate, true); // Byte rate
+            view.setUint16(32, blockAlign, true); // Block align
+            view.setUint16(34, bitsPerSample, true); // Bits per sample
+
+            // data chunk
+            view.setUint32(36, 0x64617461, false); // "data"
+            view.setUint32(40, pcmLength, true); // Data size
+
+            // PCM data
+            const offset = 44;
+            for (let i = 0; i < pcmData.length; i++) {
+                view.setInt16(offset + i * 2, pcmData[i], true);
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+
+        // Firestore paths
+        const getBookmarkDocRef = (uid) => doc(db, 'artifacts', appId, 'users', uid, 'data', 'bookmarks');
+
+        // --- UPDATED LESSON DATA FOR VENDOR DASHBOARD ---
+        const LESSON_DATA = [
+            { id: 'week_1', week: 1, title: 'Greetings & Basic Transactions', videoId: '7aWhs5G6I-I', content: 'Essential phrases for welcoming customers and handling initial inquiries.', downloadLink: 'data:text/plain;charset=utf-8,Week 1 Summary: Practice saying "Hello, welcome to my shop!" and initial pricing.' },
+            { id: 'week_2', week: 2, title: 'Handling Inventory & Stock', videoId: 'nU2U8Xl7550', content: 'Vocabulary for product availability, sizing, and colors.', downloadLink: 'data:text/plain;charset=utf-8,Week 2 Summary: Learn English phrases related to stock, sizes, and checking inventory.' },
+            { id: 'week_3', week: 3, title: 'Promotions & Discounts', videoId: '5y9F27I4j2E', content: 'Phrases for explaining special offers, sales, and haggling.', downloadLink: 'data:text/plain;charset=utf-8,Week 3 Summary: Focus on common phrases for sales, discounts, and bargaining.' },
+            { id: 'week_4', week: 4, title: 'Handling Money & Change', videoId: 'fE_W176D3Wc', content: 'Practicing numbers, counting change, and payment methods.', downloadLink: 'data:text/plain;charset=utf-4,Week 4 Summary: Essential numerical English and payment vocabulary.' },
+            { id: 'week_5', week: 5, title: 'Dealing with Difficult Customers', videoId: 'L1c9hR_5994', content: 'Phrases for calmly resolving issues, returns, and complaints.', downloadLink: 'data:text/plain;charset=utf-8,Week 5 Summary: How to handle difficult customer interactions professionally in English.' },
+            { id: 'week_6', week: 6, title: 'Building Customer Loyalty', videoId: 'k4J-H58Jt8Y', content: 'Polite ways to ask for feedback and invite return visits.', downloadLink: 'data:text/plain;charset=utf-8,Week 6 Summary: Final English phrases for closing sales and building long-term relationships.' },
+        ];
+        // Per-week Google Form links (set a full URL for each week to use external forms)
+        // If an entry is falsy, the app will fall back to the local `forms/quiz.html` fallback.
+        const WEEK_GOOGLE_FORMS = [
+            '', // Week 1: set a Google Form URL like 'https://docs.google.com/forms/d/e/xxxxx/viewform'
+            '', // Week 2
+            '', // Week 3
+            '', // Week 4
+            '', // Week 5
+            ''  // Week 6
+        ];
+        // -------------------------------------------------------------------
+        
+        // Expose lesson data and utility functions globally for other script blocks
+        window.LESSON_DATA = LESSON_DATA;
+        window.getBookmarkDocRef = getBookmarkDocRef;
+        window.loadLesson = loadLesson;
+
+        // State for Bookmarks: Object mapping lessonId to true/false
+        let bookmarks = {}; 
+        window.bookmarks = bookmarks; // Global access for the bookmark toggle function
+
+        function renderBookmarks() {
+            const bookmarkIcon = document.getElementById('bookmarkIcon');
+            const currentLessonId = document.querySelector('.rail-week-item.bg-emerald-600')?.dataset.lessonId;
+
+            if (bookmarkIcon && currentLessonId) {
+                const isBookmarked = !!bookmarks[currentLessonId];
+                bookmarkIcon.classList.toggle('text-yellow-400', isBookmarked);
+                bookmarkIcon.classList.toggle('text-gray-400', !isBookmarked);
+                bookmarkIcon.title = isBookmarked ? "Remove Bookmark" : "Add Bookmark";
+            }
+        }
+
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        document.getElementById('userIdDisplay').textContent = `User ID: ${userId}`;
+                        loadBookmarks();
+                    } else {
+                        isAuthReady = true;
+                        // Anonymous or signed out, cannot store bookmarks persistently
+                        document.getElementById('userIdDisplay').textContent = `User ID: Not Signed In (Anon)`;
+                    }
+                    // Load the default lesson once auth state is known
+                    loadLesson(1);
+                });
+            } catch(error) {
+                console.error("Firebase initialization failed:", error);
+                // Fallback to loading the first lesson if Firebase fails
+                loadLesson(1);
+            }
+        }
+
+        function loadBookmarks() {
+            if (!isAuthReady || !userId || !db) return;
+
+            const docRef = getBookmarkDocRef(userId);
+            
+            // Real-time listener for bookmarks
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    bookmarks = docSnap.data().lessons || {};
+                    console.log("Bookmarks loaded:", bookmarks);
+                } else {
+                    bookmarks = {};
+                    console.log("No bookmarks found.");
+                }
+                renderBookmarks();
+            }, (error) => {
+                console.error("Error listening to bookmarks:", error);
+            });
+        }
+
+        async function toggleBookmark(lessonId) {
+            if (!isAuthReady || !userId || !db) {
+                // Use custom modal instead of alert
+                showModal("Authentication Required", "Please ensure you are authenticated to save bookmarks.");
+                return;
+            }
+
+            const isBookmarked = !!bookmarks[lessonId];
+            const newBookmarks = { ...bookmarks };
+
+            if (isBookmarked) {
+                delete newBookmarks[lessonId];
+            } else {
+                newBookmarks[lessonId] = true;
+            }
+
+            const docRef = getBookmarkDocRef(userId);
+            try {
+                // Update the single document containing the bookmarks map
+                await setDoc(docRef, { lessons: newBookmarks }, { merge: false });
+                // Note: The onSnapshot listener will update the local 'bookmarks' state and re-render the UI
+                console.log(`Bookmark for ${lessonId} toggled successfully.`);
+            } catch (error) {
+                console.error("Error toggling bookmark:", error);
+                showModal("Error Saving", "Could not save bookmark. Please try again.");
+            }
+        }
+        window.toggleBookmark = toggleBookmark; // Expose globally
+
+        function updateLessonDisplay(lesson) {
+            currentLesson = lesson; // Store current lesson globally
+            document.getElementById('lessonTitle').textContent = `Week ${lesson.week}: ${lesson.title}`;
+            document.getElementById('headerWeekLabel').textContent = `Week ${lesson.week}: ${lesson.title}`;
+            document.getElementById('ytPlayer').src = `https://www.youtube.com/embed/${lesson.videoId}?rel=0&autoplay=1`;
+            document.getElementById('lessonDescription').textContent = lesson.content;
+            document.getElementById('downloadLink').href = lesson.downloadLink;
+            document.getElementById('downloadLink').download = `Puente_Lesson_${lesson.week}.txt`;
+
+            // Update action button data
+            const bookmarkBtn = document.getElementById('bookmarkButton');
+            bookmarkBtn.onclick = () => window.toggleBookmark(lesson.id);
+
+            // Update UI selected state for rail buttons
+            document.querySelectorAll('.rail-week-item').forEach(btn => {
+                const isActive = btn.dataset.week == lesson.week;
+                btn.classList.toggle('bg-emerald-600', isActive);
+                btn.classList.toggle('text-white', isActive);
+                btn.classList.toggle('hover:bg-emerald-700', isActive);
+                btn.classList.toggle('bg-gray-100', !isActive);
+                btn.dataset.lessonId = lesson.id; // Store lesson ID on the active button
+            });
+            renderBookmarks(); // Re-render bookmark status for new lesson
+            document.getElementById('scenarioContainer').classList.add('hidden'); // Hide scenario when lesson changes
+        }
+
+        function loadLesson(weekNumber) {
+            const lesson = LESSON_DATA.find(l => l.week === weekNumber);
+            if (lesson) {
+                updateLessonDisplay(lesson);
+            } else {
+                console.error(`Lesson for week ${weekNumber} not found.`);
+            }
+        }
+        window.loadLesson = loadLesson; // Expose globally
+
+        // Modal (Custom Alert/Confirm replacement)
+        function showModal(title, message, callback = null) {
+            const modal = document.getElementById('customModal');
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            
+            const confirmBtn = document.getElementById('modalConfirm');
+            const closeBtn = document.getElementById('modalClose');
+
+            if (callback) {
+                confirmBtn.classList.remove('hidden');
+                confirmBtn.onclick = () => {
+                    modal.classList.add('hidden');
+                    callback(true);
+                };
+                closeBtn.onclick = () => {
+                    modal.classList.add('hidden');
+                    callback(false);
+                };
+            } else {
+                confirmBtn.classList.add('hidden');
+                closeBtn.onclick = () => modal.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+        window.showModal = showModal; // Expose globally
+
+
+        // --- GEMINI API INTEGRATIONS ---
+
+        async function ttsGenerateAndPlay() {
+            if (!currentLesson) return;
+
+            const ttsButton = document.getElementById('ttsButton');
+            const originalText = ttsButton.innerHTML;
+            
+            // Text to be spoken (using the lesson title as the phrase to practice)
+            const textToSpeak = `Week ${currentLesson.week}. ${currentLesson.title}. ${currentLesson.content}`;
+
+            ttsButton.innerHTML = '<svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating Audio...';
+            ttsButton.disabled = true;
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: textToSpeak }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            // Using a clear, firm voice suitable for instruction
+                            prebuiltVoiceConfig: { voiceName: "Kore" } 
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${API_KEY}`;
+            
+            let response, result;
+            try {
+                // Implementing simple retry logic for API calls
+                let success = false;
+                let delay = 1000;
+                for (let i = 0; i < 3; i++) {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        result = await response.json();
+                        success = true;
+                        break;
+                    }
+                    if (i < 2) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Exponential backoff
+                    }
+                }
+                if (!success) throw new Error("API call failed after retries.");
+
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 16000; // Default to 16000 Hz
+                    
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+                    
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+
+                    audio.onended = () => {
+                        ttsButton.innerHTML = originalText;
+                        ttsButton.disabled = false;
+                    };
+                    audio.onerror = () => {
+                        showModal("Audio Error", "Could not play the generated audio. Try again.");
+                        ttsButton.innerHTML = originalText;
+                        ttsButton.disabled = false;
+                    }
+                } else {
+                    throw new Error("Invalid audio response structure.");
+                }
+
+            } catch (error) {
+                console.error("TTS generation error:", error);
+                showModal("TTS Failed", `Could not generate audio. Error: ${error.message || 'Check console.'}`);
+                ttsButton.innerHTML = originalText;
+                ttsButton.disabled = false;
+            }
+        }
+        window.ttsGenerateAndPlay = ttsGenerateAndPlay; // Expose globally
+
+        async function generateScenario() {
+            if (!currentLesson) return;
+
+            const scenarioContainer = document.getElementById('scenarioContainer');
+            const scenarioOutput = document.getElementById('scenarioOutput');
+            const scenarioButton = document.getElementById('scenarioButton');
+            const originalText = scenarioButton.innerHTML;
+
+            scenarioButton.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Generating Scenario...';
+            scenarioButton.disabled = true;
+            scenarioOutput.innerHTML = '<p class="text-center text-gray-500 italic">Generating a practice dialogue...</p>';
+            scenarioContainer.classList.remove('hidden');
+
+            const systemPrompt = "You are an expert language tutor creating a short, realistic dialogue for a market vendor who sells various products in a foreign country. The dialogue should be between the Vendor (the user) and a Customer, focusing only on the specific topic provided. The output MUST be formatted clearly using speaker labels (e.g., 'Customer:', 'Vendor:'). Keep the dialogue short (4-6 lines total) and highly focused on the lesson topic.";
+            
+            const userQuery = `Create a short practice dialogue focusing on the vendor topic: ${currentLesson.title} (${currentLesson.content}).`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                model: "gemini-2.5-flash-preview-09-2025"
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+            
+            let response, result;
+            try {
+                let success = false;
+                let delay = 1000;
+                for (let i = 0; i < 3; i++) {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        result = await response.json();
+                        success = true;
+                        break;
+                    }
+                    if (i < 2) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2; // Exponential backoff
+                    }
+                }
+                if (!success) throw new Error("API call failed after retries.");
+
+                const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text || "Failed to generate scenario.";
+                
+                // Format the output
+                const formattedText = generatedText.split('\n').map(line => {
+                    if (line.trim().startsWith('Customer:')) {
+                        return `<p class="text-indigo-700 font-semibold mb-1">${line.trim()}</p>`;
+                    } else if (line.trim().startsWith('Vendor:')) {
+                        return `<p class="text-emerald-700 font-semibold mb-1">${line.trim()}</p>`;
+                    }
+                    return `<p class="text-gray-700 mb-1">${line.trim()}</p>`;
+                }).join('');
+
+                scenarioOutput.innerHTML = formattedText;
+                
+            } catch (error) {
+                console.error("Scenario generation error:", error);
+                scenarioOutput.innerHTML = '<p class="text-red-500">Error generating scenario. Please try again.</p>';
+            } finally {
+                scenarioButton.innerHTML = originalText;
+                scenarioButton.disabled = false;
+            }
+        }
+        window.generateScenario = generateScenario; // Expose globally
+
+
+        // Main App Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            initFirebase();
+            
+            // Wire the week rail buttons
+            document.querySelectorAll('.rail-week-item').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const week = Number(e.currentTarget.dataset.week);
+                    loadLesson(week);
+                });
+            });
+
+            // Wire the search button
+            document.getElementById('searchButton').addEventListener('click', (e) => {
+                e.preventDefault();
+                const query = document.getElementById('lessonSearch').value.trim().toLowerCase();
+                const foundLesson = LESSON_DATA.find(l => 
+                    l.title.toLowerCase().includes(query) || 
+                    l.content.toLowerCase().includes(query) ||
+                    `week ${l.week}`.includes(query)
+                );
+
+                if (foundLesson) {
+                    loadLesson(foundLesson.week);
+                    document.getElementById('lessonSearch').value = `Week ${foundLesson.week}: ${foundLesson.title}`;
+                } else {
+                    showModal("Lesson Not Found", `No lesson found matching "${query}". Try searching by week number (1-6) or topic.`);
+                }
+            });
+            
+            // Wire Quiz Button: open Google Form (if configured) or local fallback which will return
+            document.getElementById('takeQuizButton').addEventListener('click', () => {
+                const week = currentLesson?.week || 1;
+                const formUrl = (Array.isArray(WEEK_GOOGLE_FORMS) && WEEK_GOOGLE_FORMS[week - 1]) || '';
+                if (formUrl) {
+                    // Open Google Form in a new tab and show a small modal with a return button
+                    window.open(formUrl, '_blank', 'noopener');
+                    // Customize confirm label and provide a callback that reloads the current lesson when user returns
+                    const confirmBtn = document.getElementById('modalConfirm');
+                    const prevText = confirmBtn.textContent;
+                    confirmBtn.textContent = "I'm done";
+                    showModal("Quiz Opened", "The quiz opened in a new tab. Submit it there, then come back to this tab and click \"I'm done\" to refresh your dashboard.", (ok) => {
+                        // restore button label
+                        confirmBtn.textContent = prevText;
+                        if (ok) {
+                            // reload the lesson to refresh any state
+                            try { loadLesson(week); } catch(e){ location.reload(); }
+                        }
+                    });
+                } else {
+                    // No external form configured — use local fallback which auto-redirects back using `return`
+                    const returnPage = 'dashboard-vendor.html';
+                    window.location.href = `forms/quiz.html?week=${week}&return=${encodeURIComponent(returnPage)}`;
+                }
+            });
+
+            // Wire the activity checkboxes to simulate completion (can be expanded with Firestore)
+            document.querySelectorAll('#activityList input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        e.target.closest('label').classList.add('line-through', 'text-gray-500');
+                    } else {
+                        e.target.closest('label').classList.remove('line-through', 'text-gray-500');
+                    }
+                });
+            });
+
+             // Wire the TTS button
+            document.getElementById('ttsButton').addEventListener('click', window.ttsGenerateAndPlay);
+
+             // Wire the Scenario button
+            document.getElementById('scenarioButton').addEventListener('click', window.generateScenario);
+        });
+    </script>
 </head>
-<body class="vendor-dashboard">
-  <script>try{ sessionStorage.setItem('puente_role','vendor'); }catch(e){}</script>
+<body class="bg-gray-50 min-h-screen">
 
-  <main style="padding:18px;max-width:1100px;margin:18px auto">
-    <header class="vendor-hero">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div id="vendorAvatar" class="vendor-avatar" style="width:56px;height:56px;border-radius:999px;background:#e6e7eb;display:grid;place-items:center;font-weight:700;color:#fff;font-size:18px">V</div>
-        <div>
-          <h1 style="margin:0">Vendor Dashboard</h1>
-          <div class="muted" style="margin-top:6px">Quick access to your lessons, KPIs and demo submissions.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn" onclick="location.href='contributor.html'">Upload Resource</button>
-        <button class="btn link-btn" onclick="location.href='index.html'">Switch account</button>
-      </div>
-    </header>
-
-    <section class="vendor-kpis" aria-label="Vendor KPIs">
-      <div id="vendorKpiPerformance" class="vendor-kpi"><div class="muted">Performance</div><div style="font-weight:700;font-size:20px">—</div></div>
-      <div id="vendorKpiAttempts" class="vendor-kpi"><div class="muted">Attempts</div><div style="font-weight:700;font-size:20px">—</div></div>
-      <div id="vendorKpiCompletion" class="vendor-kpi"><div class="muted">Completion</div><div style="font-weight:700;font-size:20px">—</div></div>
-    </section>
-
-    <section style="margin-top:18px;display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
-      <div>
-        <h3 style="margin-top:0">Your Lessons</h3>
-        <div id="vendorLessons" class="lessons-list"></div>
-        
-        <!-- Scheduled 6-week Vendor program -->
-        <div id="vendorScheduledProgram" class="card" style="margin-top:12px;padding:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <h4 style="margin:0">Scheduled: 6‑Week Vendor English</h4>
-              <div class="muted small" style="margin-top:6px">Practical English for market vendors — greetings, transactions, and safety.</div>
+    <!-- Custom Modal Structure (Replacement for alert/confirm) -->
+    <div id="customModal" class="hidden fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
+            <h3 id="modalTitle" class="text-xl font-bold text-gray-800 mb-4">Modal Title</h3>
+            <p id="modalMessage" class="text-gray-600 mb-6">Modal message content.</p>
+            <div class="flex justify-end space-x-3">
+                <button id="modalClose" class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">Close</button>
+                <button id="modalConfirm" class="px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition hidden">Confirm</button>
             </div>
-            <div><button class="btn link-btn" onclick="window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',1)">Open</button></div>
-          </div>
-          <div style="margin-top:12px">
-            <ul id="vendorScheduledList" style="list-style:none;padding-left:0;margin-top:8px">
-              <li data-week="1" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
-                <div style="flex:1">Module 1 — Greetings</div>
-                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',1)">Enter</button></div>
-              </li>
-              <li data-week="2" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
-                <div style="flex:1">Module 2 — Phrases</div>
-                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',2)">Enter</button></div>
-              </li>
-              <li data-week="3" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
-                <div style="flex:1">Module 3 — Transactions</div>
-                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',3)">Enter</button></div>
-              </li>
-              <li data-week="4" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
-                <div style="flex:1">Module 4 — Asking for Help</div>
-                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',4)">Enter</button></div>
-              </li>
-              <li data-week="5" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px">
-                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
-                <div style="flex:1">Module 5 — Safety</div>
-                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',5)">Enter</button></div>
-              </li>
-              <li data-week="6" style="cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:0">
-                <div class="week-check" aria-hidden="true" style="width:14px;height:14px;display:grid;place-items:center;font-size:12px">&nbsp;</div>
-                <div style="flex:1">Module 6 — Review</div>
-                <div><button class="btn link-btn" onclick="event.stopPropagation(); window.puente_openLessonWeek && window.puente_openLessonWeek('market_english_greetings',6)">Enter</button></div>
-              </li>
-            </ul>
-          </div>
         </div>
-        
-        <!-- Inline lesson viewer (hidden until a lesson is opened) -->
-        <div id="vendorLessonViewer" class="card" style="margin-top:16px;display:none;padding:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <h4 id="vl_title" style="margin:0">Lesson</h4>
-              <div id="vl_sub" class="muted" style="margin-top:6px">Week program</div>
-            </div>
-            <div><button id="vl_close" class="btn link-btn">Close</button></div>
-          </div>
-          <div style="display:flex;gap:12px;margin-top:12px">
-            <div id="vendorWeekList" style="width:220px;max-height:420px;overflow:auto"></div>
-            <div id="vendorWeekDetail" style="flex:1;min-width:0"></div>
-          </div>
-        </div>
-      </div>
-
-      <aside style="position:relative">
-        <div class="card" style="padding:12px">
-          <strong>Quick Submit Attempt</strong>
-          <div class="muted small" style="margin-top:6px">For demos — includes `userId` automatically when available.</div>
-          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
-            <select id="vs_lesson" style="width:100%;padding:8px;border-radius:6px"></select>
-            <input id="vs_week" placeholder="Week (e.g. 1)" style="padding:8px;border-radius:6px" />
-            <input id="vs_userid" placeholder="userId (optional)" style="padding:8px;border-radius:6px" />
-            <button id="vs_submit" class="btn">Submit Attempt</button>
-            <div id="vs_out" style="margin-top:8px;white-space:pre-wrap;background:#f7f8fa;padding:8px;border-radius:6px">No submission yet</div>
-          </div>
-        </div>
-
-        <div class="card" style="padding:12px;margin-top:12px">
-          <strong>Shortcuts</strong>
-          <div style="margin-top:8px"><a href="/resources" class="link-btn">Manage resources</a></div>
-        </div>
-      </aside>
-    </section>
-  </main>
-  <script>
-    // Ensure the global helper exists early so static buttons can call it before the main script initializes.
-    window.puente_openLessonWeek = window.puente_openLessonWeek || function(lessonId, week){
-      try{ sessionStorage.setItem('puente_pending_open', JSON.stringify({ lessonId, week: Number(week) })); }catch(e){}
-      try{ const sel = document.querySelector('#vendorScheduledList li[data-week="'+ Number(week) +'"]'); if (sel) try{ sel.click(); }catch(e){} }catch(e){}
-    };
-  </script>
-  <script src="dashboard-vendor.js"></script>
-  <div id="puente-debug" style="position:fixed;right:12px;bottom:12px;max-width:360px;z-index:99999;background:#fff;border:1px solid #eee;padding:8px;border-radius:8px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,0.08);display:none">
-    <div style="font-weight:700;margin-bottom:6px">Debug</div>
-    <div id="puente-debug-log" style="max-height:180px;overflow:auto;font-family:monospace;font-size:12px;color:#111"></div>
-    <div style="margin-top:8px;text-align:right;display:flex;gap:8px;justify-content:space-between">
-      <div style="text-align:left"><button class="btn" onclick="(function(){ try{ if (confirm('Clear local progress and module overrides? This cannot be undone locally.')){ for (const k of Object.keys(localStorage)){ if (k && (k.indexOf('puente_progress_')===0 || k.indexOf('puente_module_video_')===0)) localStorage.removeItem(k); } alert('Local progress cleared'); } }catch(e){ alert('Failed to clear'); } })()">Clear local progress</button></div>
-      <div><button class="btn" onclick="(function(){ const el=document.getElementById('puente-debug'); el.style.display = (el.style.display==='none') ? '' : 'none'; })()">Toggle</button></div>
     </div>
-  </div>
+
+    <div class="max-w-7xl mx-auto pt-4 pb-12 px-4 md:px-8">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 p-4 bg-white rounded-xl shadow-lg">
+            
+            <!-- Logo and Module Selector -->
+            <div class="flex items-center gap-3">
+                <!-- SVG Logo (Placeholder for assets/puente-logo.svg) -->
+                <div class="bg-emerald-600 p-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M12 17V8"></path>
+                        <path d="M16 14l-4 3-4-3"></path>
+                    </svg>
+                </div>
+                <div class="flex flex-col">
+                    <div class="font-extrabold text-xl text-emerald-800">Puente Learn — Vendor</div>
+                    <button id="moduleSelector" class="px-3 py-1 mt-1 bg-emerald-100 text-emerald-700 font-semibold text-sm rounded-full hover:bg-emerald-200 transition">6 Week Module ▾</button>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <form id="lessonSearchForm" class="w-full md:w-1/3">
+                <div class="flex">
+                    <input type="text" id="lessonSearch" placeholder="Search lessons by week or topic..." class="flex-1 p-3 border border-emerald-300 rounded-l-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition" aria-label="Search lessons">
+                    <button type="submit" id="searchButton" class="p-3 bg-emerald-500 text-white rounded-r-lg hover:bg-emerald-600 transition shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Dashboard Title and User Info -->
+            <div class="text-right flex flex-col items-end">
+                <div class="text-xl font-extrabold text-emerald-900">Vendor Dashboard</div>
+                <div id="headerWeekLabel" class="text-sm text-gray-500 mt-1 font-medium">Week 1: Greetings & Basic Transactions</div>
+                <div id="userIdDisplay" class="text-xs text-gray-400 mt-1">User ID: Loading...</div>
+            </div>
+        </header>
+
+        <!-- Main Application Layout -->
+        <div class="flex gap-6">
+            
+            <!-- Left Navigation Rail -->
+            <nav class="left-rail w-20 flex flex-col p-3 space-y-3 bg-white rounded-xl shadow-lg h-[80vh] overflow-y-auto hidden sm:flex" aria-label="Main navigation">
+                
+                <!-- Main Buttons -->
+                <button id="railDashboard" class="rail-btn active p-3 rounded-xl flex justify-center hover:bg-emerald-700 transition" title="Dashboard" aria-label="Dashboard">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white" aria-hidden="true"><path d="M3 13h8V3H3v10zM13 21h8V11h-8v10zM13 3v6h8V3h-8zM3 21h8v-6H3v6z" fill="currentColor"/></svg>
+                </button>
+                <button id="railLessons" class="rail-btn p-3 rounded-xl flex justify-center text-gray-500 hover:bg-emerald-100 transition" title="Lessons" aria-label="Lessons" onclick="showModal('Lessons List', 'This button would typically switch the main content area to a comprehensive list of all lessons.');">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5 5.223 5 3.375 6.421 2.5 8.152M12 6.253c1.168-.815 2.754-1.253 4.5-1.253 2.277 0 4.125 1.421 5 3.152m-14 7.039s.002.002 0 0z"></path></svg>
+                </button>
+
+                <!-- Week Selector -->
+                <div id="railWeekListVisible" class="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                    <button type="button" class="rail-week-item p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700" data-week="1" data-lesson-id="week_1">W1</button>
+                    <button type="button" class="rail-week-item p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-emerald-100" data-week="2" data-lesson-id="week_2">W2</button>
+                    <button type="button" class="rail-week-item p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-emerald-100" data-week="3" data-lesson-id="week_3">W3</button>
+                    <button type="button" class="rail-week-item p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-emerald-100" data-week="4" data-lesson-id="week_4">W4</button>
+                    <button type="button" class="rail-week-item p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-emerald-100" data-week="5" data-lesson-id="week_5">W5</button>
+                    <button type="button" class="rail-week-item p-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-emerald-100" data-week="6" data-lesson-id="week_6">W6</button>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="main-area flex-1 min-h-[80vh]">
+                <div class="card bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4 border-b pb-3">
+                        <h2 id="lessonTitle" class="text-2xl md:text-3xl font-bold text-emerald-800">Week 1: Greetings & Basic Transactions</h2>
+                        
+                        <!-- Lesson Action Buttons -->
+                        <div class="flex space-x-2">
+                            <!-- Gemini TTS Button (NEW) -->
+                            <button id="ttsButton" class="flex items-center p-3 bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition" title="Play Lesson Audio (TTS)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a1 1 0 010 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L12 11.586l2.086-2.086a1 1 0 011.414 0zM12 21a9 9 0 100-18 9 9 0 000 18z" />
+                                </svg>
+                            </button>
+                            <!-- Bookmark Button -->
+                            <button id="bookmarkButton" class="p-3 bg-gray-100 rounded-full hover:bg-gray-200 transition" title="Bookmark Lesson">
+                                <svg id="bookmarkIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                </svg>
+                            </button>
+                            <!-- View Button (Already viewing, but kept for context) -->
+                            <button id="viewButton" class="p-3 bg-gray-100 rounded-full text-emerald-500 hover:bg-gray-200 transition" title="View Lesson (Active)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.55 3.3a1 1 0 010 1.4L15 18M7 10l-4.55 3.3a1 1 0 000 1.4L7 18M10 8V6a2 2 0 012-2h2a2 2 0 012 2v2M12 4v16M12 20h2a2 2 0 002-2v-4M12 20h-2a2 2 0 01-2-2v-4M12 10h4M12 14h-4" />
+                                </svg>
+                            </button>
+                            <!-- Download Button -->
+                            <a id="downloadLink" href="#" download="Puente_Lesson_1.txt" class="p-3 bg-gray-100 rounded-full text-emerald-500 hover:bg-gray-200 transition flex items-center" title="Download Lesson Summary">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Video Player -->
+                    <div class="week-media mb-6">
+                        <div class="relative overflow-hidden rounded-xl aspect-video bg-gray-200">
+                            <!-- Video Player uses general or placeholder IDs -->
+                            <iframe id="ytPlayer" width="100%" height="100%" src="https://www.youtube.com/embed/7aWhs5G6I-I?rel=0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full"></iframe>
+                        </div>
+                        <p id="lessonDescription" class="mt-4 text-gray-700 italic border-l-4 border-emerald-400 pl-3">Essential phrases for welcoming customers and handling initial inquiries.</p>
+                    </div>
+
+                    <!-- Activities and Quiz -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                        
+                        <!-- Planned Activities -->
+                        <div>
+                            <h4 class="text-xl font-semibold text-gray-800 mb-4">Planned Activities</h4>
+                            <div id="activityList" class="flex flex-col gap-3">
+                                <label class="flex items-center space-x-2 text-gray-700 cursor-pointer transition duration-200">
+                                    <input type="checkbox" class="h-5 w-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500">
+                                    <span>Practice role-play with a co-worker</span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-gray-700 cursor-pointer transition duration-200">
+                                    <input type="checkbox" class="h-5 w-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500">
+                                    <span>Write 5 sentences using new vocabulary</span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-gray-700 cursor-pointer transition duration-200">
+                                    <input type="checkbox" class="h-5 w-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500">
+                                    <span>Repeat video phrases aloud 3 times</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Quiz & Scenario -->
+                        <div>
+                            <h4 class="text-xl font-semibold text-gray-800 mb-4">Weekly Practice</h4>
+                            
+                            <!-- Scenario Generator Button (NEW) -->
+                            <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200 flex items-center justify-between mb-4">
+                                <div class="text-indigo-600 flex items-center font-medium">
+                                    ✨ Instant Scenario Generator
+                                </div>
+                                <button id="scenarioButton" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition shadow-md flex items-center">
+                                    Generate Dialogue
+                                </button>
+                            </div>
+
+                            <!-- Generated Scenario Output (NEW) -->
+                            <div id="scenarioContainer" class="hidden p-4 bg-white rounded-lg border border-gray-300 mb-6 shadow-inner">
+                                <h5 class="font-bold text-gray-800 mb-2">Practice Dialogue:</h5>
+                                <div id="scenarioOutput" class="space-y-1 text-sm">
+                                    <!-- LLM Output goes here -->
+                                </div>
+                            </div>
+                            
+                            <!-- Quiz Button -->
+                            <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200 flex items-center justify-between">
+                                <div class="text-gray-600">Short 5-question quiz to test vocabulary and comprehension.</div>
+                                <button id="takeQuizButton" class="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition shadow-md">
+                                    Take Quiz
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Footer / Admin Access -->
+        <footer class="mt-8 text-center pt-4 border-t border-gray-200">
+            <div class="flex justify-center">
+                <button id="contactAdminBtn" class="px-4 py-2 text-emerald-600 font-semibold rounded-lg border border-emerald-600 hover:bg-emerald-50 transition" onclick="showModal('Contact Admin', 'Please contact your administrator at admin@puenteapp.org for support.');">Contact Admin</button>
+            </div>
+        </footer>
+    </div>
+
 </body>
 </html>

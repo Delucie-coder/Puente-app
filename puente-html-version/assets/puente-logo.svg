@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Puente Learn">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#0aa36a"/>
+      <stop offset="1" stop-color="#067f4a"/>
+    </linearGradient>
+  </defs>
+  <rect rx="18" ry="18" width="120" height="120" fill="url(#g)" />
+  <text x="50%" y="54%" font-family="Inter, Arial, sans-serif" font-weight="800" font-size="56" fill="#fff" text-anchor="middle" dominant-baseline="middle">P</text>
+</svg>

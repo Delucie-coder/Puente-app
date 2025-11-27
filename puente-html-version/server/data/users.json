@@ -37,5 +37,13 @@
     "photoUrl": null,
     "created": 1763374622991,
     "role": "student"
+  },
+  "delucie": {
+    "email": "delucie",
+    "name": null,
+    "photoUrl": null,
+    "created": 1764250585592,
+    "role": "student",
+    "token": "tkn_p7i3efmuy0h"
   }
 }

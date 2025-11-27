@@ -1,5 +1,19 @@
 (function(){
-  const API_BASE = '';
+  // When opening pages through a file server (Live Server / file://) the origin
+  // will not be the mock server. Detect that case and point API_BASE to the
+  // running mock server so `/api/*` calls succeed. Adjust port if your server
+  // runs on a different port.
+  const DETECT_PORT = '3001';
+  let API_BASE = '';
+  try{
+    const origin = (location && location.origin) ? location.origin : '';
+    // If loaded from file:// or from a dev server (like Live Server on 5500)
+    // then use the mock server origin.
+    if (!origin || origin.indexOf(`:${DETECT_PORT}`) === -1) {
+      // prefer localhost for the mock server
+      API_BASE = `http://localhost:${DETECT_PORT}`;
+    }
+  }catch(e){ API_BASE = `http://localhost:${DETECT_PORT}`; }
   async function el(id){ return document.getElementById(id); }
   document.addEventListener('DOMContentLoaded', async ()=>{
     const lessonsSel = await el('amv_lessons');

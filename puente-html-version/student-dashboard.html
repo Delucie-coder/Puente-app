@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Dashboard — Puente</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .choice-card{ max-width:720px;margin:40px auto;padding:20px;border-radius:8px;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,0.06); }
+    .role-opts{ display:flex;gap:16px;flex-wrap:wrap;margin-top:16px }
+    .role-btn{ flex:1;padding:18px;border-radius:8px;border:1px solid #e6e6e9;background:#fbfbfe;font-size:16px;cursor:pointer; transition:transform .18s ease, box-shadow .18s ease; }
+    .role-btn:hover{ transform:translateY(-4px); box-shadow:0 12px 30px rgba(2,6,23,0.08); }
+  </style>
+</head>
+<body>
+  <div class="choice-card">
+    <h2 id="sd_title">Student Dashboard</h2>
+    <p id="sd_welcome" class="muted">Choose how you'd like to continue.</p>
+
+    <div class="role-opts">
+      <button id="continueVendor" class="role-btn">Continue as Vendor</button>
+      <button id="continueMoto" class="role-btn">Continue as Motorcyclist</button>
+    </div>
+
+    <div style="margin-top:18px;display:flex;gap:8px">
+      <button id="sd_logout" class="btn">Log out</button>
+      <a href="Puente codes.html" style="margin-left:auto" class="muted">Back to login</a>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const userRaw = sessionStorage.getItem('puente_user') || localStorage.getItem('puente:user') || null;
+      let name = '';
+      try{ if (userRaw) { const u = JSON.parse(userRaw); name = u && (u.name || u.email) ? (u.name || u.email) : ''; } }catch(e){}
+      const welcome = document.getElementById('sd_welcome'); if (welcome) welcome.textContent = name ? `Welcome, ${name}. Choose how to continue:` : 'Choose how you want to continue your learning.';
+
+      function goAs(role){
+        try{ sessionStorage.setItem('puente_role', role); }catch(e){}
+        // navigate to role-specific dashboard pages
+        const target = role === 'vendor' ? 'dashboard-vendor.html' : 'dashboard-moto.html';
+        window.location.href = target;
+      }
+
+      document.getElementById('continueVendor').addEventListener('click', ()=> goAs('vendor'));
+      document.getElementById('continueMoto').addEventListener('click', ()=> goAs('moto'));
+      document.getElementById('sd_logout').addEventListener('click', ()=>{ try{ sessionStorage.removeItem('puente_user'); sessionStorage.removeItem('puente_role'); }catch(e){} window.location.href = 'Puente codes.html'; });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puente Contributor Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* Light background */
+        }
+        /* Custom styling for the "Puente" sticker/logo effect */
+        .puente-sticker {
+            position: relative;
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px; /* Pill shape */
+            font-weight: 700;
+            font-size: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transform: rotate(-3deg); /* Add a slight rotation for a 'sticker' look */
+            transition: transform 0.3s ease-in-out;
+        }
+        .puente-sticker:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+        .impact-card {
+            transition: all 0.3s ease;
+        }
+        .impact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white shadow-2xl rounded-2xl p-6 md:p-12">
+
+        <!-- Header, Logo, and Sticker Section -->
+        <header class="flex flex-col items-start mb-8">
+            <!-- Puente Logo/Sticker -->
+            <div class="puente-sticker mb-4">
+                <!-- SVG Icon for "Bridge" (Puente) -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="2" x2="12" y2="22"></line>
+                    <path d="M18.8 6c-3.2 0-5.8 2.6-5.8 5.8 0 3.2 2.6 5.8 5.8 5.8H5.2c-3.2 0-5.8-2.6-5.8-5.8 0-3.2 2.6-5.8 5.8-5.8"></path>
+                </svg>
+                Puente
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mt-4">Welcome, Contributor!</h1>
+        </header>
+
+        <!-- Welcome Text Section -->
+        <section class="mb-12">
+            <div class="bg-indigo-50 p-6 md:p-8 rounded-xl border border-indigo-200">
+                <p class="text-lg text-gray-700 leading-relaxed">
+                    We are thrilled to have you here. Our platform is a unique web-based learning application designed specifically for students who are local vendors and motorcyclists. Its mission is simple but powerful: to equip these hardworking individuals with basic English skills that will help them confidently interact with foreign customers, expand their opportunities, and grow their businesses.
+                </p>
+                <p class="text-lg text-gray-700 leading-relaxed mt-4">
+                    By providing an accessible, practical, and engaging learning environment, we aim to empower local communities, foster economic growth, and break language barriers that often limit potential. With your support, we can transform the way these students learn, create meaningful impact, and open doors to a brighter, more connected future.
+                </p>
+                <p class="text-xl text-indigo-700 font-bold mt-6 pt-4 border-t border-indigo-200">
+                    Join us in making this vision a reality—your contribution could change lives, one learner at a time.
+                </p>
+            </div>
+        </section>
+
+        <!-- Innovative Partnership Section: Impact Sponsorship Tiers -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-6 border-b-4 border-indigo-400 pb-2">Innovative Partnership: Sponsor an Impact</h2>
+
+            <p class="text-gray-600 mb-8">
+                We offer three transparent partnership tiers, allowing you to directly sponsor a measurable element of the Puente learning journey. Your funding isn't just a donation; it's a dedicated investment in specific outcomes.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- Tier 1: Community Builder -->
+                <div class="impact-card bg-white p-6 rounded-xl shadow-lg border-t-4 border-teal-500 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-teal-600 mb-3">1. Community Builder</h3>
+                        <p class="text-gray-500 mb-4 font-medium">Monthly Impact</p>
+                        <p class="text-gray-700 mb-4">Sponsor the foundational tools that keep our app running and growing.</p>
+                        <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                            <li><span class="font-semibold">Sponsors 20 Key Vocabulary Terms or 5 Flashcard Lessons.</span></li>
+                            <li>Your name/company listed on our digital "Bridge Builders" wall.</li>
+                        </ul>
+                    </div>
+                    <button class="mt-8 w-full py-3 bg-teal-500 text-white font-semibold rounded-lg hover:bg-teal-600 transition duration-150 shadow-md">
+                        Contribute Monthly ($25/mo)
+                    </button>
+                </div>
+
+                <!-- Tier 2: Module Champion (Highlighted Tier) -->
+                <div class="impact-card bg-indigo-50 p-8 rounded-xl shadow-2xl border-t-4 border-indigo-600 scale-105 flex flex-col justify-between transform -translate-y-2">
+                    <div>
+                        <h3 class="text-3xl font-bold text-indigo-700 mb-3">2. Module Champion</h3>
+                        <p class="text-indigo-500 mb-4 text-lg font-bold">BIGGEST IMPACT</p>
+                        <p class="text-gray-800 mb-4">Directly fund the creation and deployment of a full, practical English module.</p>
+                        <ul class="list-disc list-inside text-gray-800 space-y-2 ml-4">
+                            <li><span class="font-semibold">Sponsors a Full Learning Module (e.g., "Customer Service Dialogues").</span></li>
+                            <li>Public recognition with logo on the sponsored module's landing page.</li>
+                            <li>Exclusive annual impact report detailing learner performance in your module.</li>
+                        </ul>
+                    </div>
+                    <button class="mt-8 w-full py-3 bg-indigo-600 text-white text-xl font-bold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-lg">
+                        Become a Champion ($500 One-Time)
+                    </button>
+                </div>
+
+                <!-- Tier 3: Future Architect -->
+                <div class="impact-card bg-white p-6 rounded-xl shadow-lg border-t-4 border-pink-500 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-pink-600 mb-3">3. Future Architect</h3>
+                        <p class="text-gray-500 mb-4 font-medium">Strategic Partnership</p>
+                        <p class="text-gray-700 mb-4">Commit to a long-term partnership that shapes the future of the Puente curriculum.</p>
+                        <ul class="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                            <li><span class="font-semibold">Sponsor an entire cohort of 50 Learners for a year.</span></li>
+                            <li>Strategic partnership consultation and dedicated feature branding.</li>
+                            <li>Co-marketing and mention in all press releases related to the cohort.</li>
+                        </ul>
+                    </div>
+                    <button class="mt-8 w-full py-3 bg-pink-500 text-white font-semibold rounded-lg hover:bg-pink-600 transition duration-150 shadow-md">
+                        Inquire for Partnership
+                    </button>
+                </div>
+            </div>
+
+            <!-- Placeholder for visual appeal/partner story -->
+            <div class="mt-12 p-6 bg-gray-100 rounded-xl flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                <!-- Placeholder for an image illustrating impact -->
+                <img src="https://placehold.co/120x120/4f46e5/ffffff?text=Impact" alt="Visual representation of impact" class="rounded-lg shadow-lg w-24 h-24 object-cover">
+                <div>
+                    <h4 class="text-xl font-semibold text-gray-800">See Your Impact: The 'Puente Effect'</h4>
+                    <p class="text-gray-600">All contributions are tracked. Future Architect partners receive direct, measurable data on their sponsored cohort's progress and success rates.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact/Next Steps -->
+        <footer class="pt-6 border-t border-gray-200 text-center">
+            <p class="text-sm text-gray-500">
+                For detailed proposals or any questions regarding our mission, please contact us.
+            </p>
+            <p class="text-md font-medium text-indigo-500 mt-1">
+                <a href="#" class="hover:underline" onclick="return false;">partnerships@puenteapp.org</a>
+            </p>
+        </footer>
+
+    </div>
+
+</body>
+</html>

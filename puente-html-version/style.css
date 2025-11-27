@@ -17,75 +17,80 @@
   --brand-2:#0aa36a;
   --line:rgba(255,255,255,0.06);
   --good:#34d399;
-  --warn:#f59e0b;
-  --bad:#fb6970;
-  --shadow:0 8px 24px rgba(2,6,23,.6);
-  --radius:14px;
-  /* slightly-off black for headings (so it's not pure #000) */
-  --heading-black: #071019;
-}
+  :root {
+    --g-900: #052b20;
+    --g-800: #073b29;
+    --g-700: #0b6b44;
+    --g-600: #0f8f56;
+    --g-500: #12b57f;
+    --g-400: #34d399;
+    --g-300: #9be3c6;
+    --g-100: #edf9f2;
+    --white: #ffffff;
+    --black: #071019;
+    --surface: #fbfdfb; /* very light green-white */
+    --card-surface: #ffffff; /* cards stay white for clarity */
+    --muted-green: #8fd7b8;
+    --card-shadow: rgba(2,6,23,0.06);
+  }
 
-* { box-sizing:border-box; margin:0; padding:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; }
+  /* Page: green backdrop, very subtle to give context */
+  body { background: linear-gradient(180deg, rgba(5,43,32,0.95) 0%, rgba(11,107,68,0.88) 100%); color: var(--white); }
 
-body { background:var(--page-bg-color); background-image:var(--bg); color:var(--text); min-height:100vh; }
+  /* Canvas and main surface: soft off-white so content pops */
+  .student-dashboard .canvas, .canvas { background: var(--surface) !important; color: var(--black) !important; box-shadow: 0 12px 30px var(--card-shadow) !important; border-radius:14px; }
 
-/* Student Dashboard (light, warm theme override) */
-.student-dashboard { background: #faf6f2; color: #3b2b22; }
-.student-dashboard .topbar { background: transparent; box-shadow:none; border-radius:0; padding:18px 0; }
-.student-dashboard .brand-title { color:#5b3927 }
-.student-dashboard .tag { color:#8b6f5e }
-.student-dashboard .hero { padding:36px 8px 12px; text-align:center; }
-.student-dashboard .hero h1{ font-size:40px; color:#5b3927; margin:6px 0 10px; font-weight:800; letter-spacing:-0.4px }
-.student-dashboard .hero-sub{ display:flex; justify-content:space-between; align-items:center; gap:12px; max-width:1100px; margin:0 auto; padding-top:8px }
-.student-dashboard .hero-left{ text-align:left }
-.student-dashboard .section-title{ font-size:24px; color:#5b3927; margin:0 0 6px }
-.student-dashboard .view-more{ font-size:14px; color:#8b6f5e }
-.student-dashboard .hero-right{ text-align:right }
-.student-dashboard .search-wrap{ display:flex; gap:8px; align-items:center }
-.student-dashboard .search-input{ padding:10px 12px; border-radius:6px; border:1px solid #e6dad0; width:260px; background:white; color:#3b2b22 }
-.student-dashboard .card{ background:white; color:#3b2b22; border:1px solid #efe7e3 }
-.student-dashboard .lesson-card{ box-shadow:none; border-radius:10px }
-.student-dashboard .muted{ color:#8b6f5e }
-.student-dashboard .btn { background:transparent; border:1px solid rgba(0,0,0,0.04) }
-.student-dashboard .btn-primary{ background:#b76a3b }
-.student-dashboard .logo-circle{ background:transparent }
-.student-dashboard .logo-img{ filter: none }
+  /* Cards: crisp white with subtle rounded corners and soft shadow */
+  .card, .panel, .modal-card, .popover-card { background: var(--card-surface) !important; border: 1px solid rgba(6,105,56,0.06) !important; color: var(--black) !important; box-shadow: 0 8px 20px rgba(3,10,6,0.04); border-radius:12px; }
 
-/* More refined warm styling for hero, cards and program grid */
-.student-dashboard .hero{ background: linear-gradient(180deg, #fffaf6 0%, #fbf6f2 100%); border-radius:12px; padding:28px; box-shadow: 0 8px 30px rgba(91,57,39,0.06); border:1px solid rgba(91,57,39,0.04); }
-.student-dashboard .card{ box-shadow: 0 10px 28px rgba(91,57,39,0.04); border-radius:12px }
-.student-dashboard .section-title{ font-weight:700 }
-.student-dashboard .search-wrap .icon-btn{ background:#fff; border:1px solid #efe7e3; color:#8b6f5e }
+  /* Headings and prominent text: dark for legibility */
+  .canvas h1, .canvas h2, .canvas h3, .canvas h4, .card > h3 { color: var(--black) !important; }
+  .lesson-title, .profile-name { color: var(--black) !important; }
 
-/* Program week tiles tuned for the light/warm aesthetic */
-.student-dashboard .program-week-grid { grid-template-columns: repeat(4, 1fr); gap:14px; }
-.student-dashboard .program-week-tile{ background: #fffaf6; border:1px solid #f2e6de; padding:14px; border-radius:12px; box-shadow: 0 6px 18px rgba(91,57,39,0.04); color:#5b3927 }
-.student-dashboard .program-week-tile .program-week-number{ font-size:13px; color:#a07a66; font-weight:700 }
-.student-dashboard .program-week-tile .program-week-title{ color:#4b3226; font-size:13px; min-height:36px }
-.student-dashboard .program-week-tile .program-week-score{ color:#6b4a3a; font-weight:700 }
-.student-dashboard .program-week-tile:hover{ transform:translateY(-4px); box-shadow:0 12px 30px rgba(91,57,39,0.08) }
-.student-dashboard .program-week-tile.done{ border-color: rgba(183,106,59,0.18); box-shadow:0 12px 30px rgba(183,106,59,0.06) }
-.student-dashboard .program-week-tick{ top:12px; right:12px; width:28px; height:28px; font-size:13px }
-.student-dashboard .program-week-tick.done{ background:#b76a3b; color:#fff }
-.student-dashboard .program-week-tick.pending{ background:#fff; color:#b0765f; border:1px solid #f0e6e0 }
-.student-dashboard .program-week-progress > i { background: linear-gradient(90deg, #f0c7a0, #c78b5b); }
+  /* Muted text -> soft green */
+  .muted, .canvas .muted, .profile-email { color: var(--muted-green) !important; }
 
-/* Pass-threshold badge for student-dashboard (so it's readable on cream background) */
-.student-dashboard .threshold-source{ border:1px solid #efe3db; background: #fff; color:#8b6f5e }
+  /* Buttons and links: green primary, subtle secondary */
+  .btn-primary { background: linear-gradient(90deg,var(--g-600),var(--g-500)) !important; color: var(--white) !important; border: none !important; box-shadow: 0 8px 18px rgba(10,120,78,0.08); }
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn, .link-btn { color: var(--black) !important; border: 1px solid rgba(6,105,56,0.06) !important; background: transparent !important; }
+  .canvas a { color: var(--g-600) !important; }
 
-/* New canvas layout to mimic the reference student dashboard */
-.student-dashboard{ background: linear-gradient(180deg,var(--canvas-bg-top) 0%, var(--canvas-bg-bottom) 100%); }
-.student-dashboard .dashboard-grid{ display:flex; justify-content:center; padding:36px 20px; }
-.student-dashboard .canvas{ width:100%; max-width:1100px; background: #ffffff; border-radius:18px; padding:20px; box-shadow: 0 30px 60px rgba(17,24,39,0.25); display:flex; gap:20px; align-items:flex-start }
-.student-dashboard .dash-main{ flex:1; background:transparent; padding:0; }
-.student-dashboard .dash-sidebar{ width:300px; background:transparent; padding:0 }
+  /* Topbar: white surface with subtle green accent */
+  .topbar { background: var(--card-surface) !important; border-color: rgba(6,105,56,0.04) !important; box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
+  .topbar .brand { border-left: 4px solid var(--g-600); padding-left:10px }
 
-/* Left vertical sidebar mimic */
-.student-dashboard .sidebar{ display:none; }
-.student-dashboard .dash-main .profile-section{ margin-bottom:14px }
+  /* Left rail and rail buttons */
+  .left-rail, .student-dashboard .left-rail { background: transparent !important; }
+  .rail-btn { background: transparent !important; color: var(--g-100) !important; border-radius:10px }
+  .rail-btn.active, .rail-btn[aria-pressed="true"] { background: linear-gradient(180deg,var(--g-700),var(--g-600)) !important; color:var(--white) !important; box-shadow:0 8px 20px rgba(6,105,56,0.10) !important; }
+  .rail-btn:hover { box-shadow:0 8px 18px rgba(6,105,56,0.06) !important; }
 
-/* Style internal cards to sit on the white canvas like the reference */
-.student-dashboard .card{ background:transparent; border:none; box-shadow:none; color:#3b2b22; padding:0 }
+  /* KPI and stat colors */
+  .kpi, .kpi .value { background: transparent !important; color: var(--black) !important; }
+  .kpi.good { color: var(--g-400) !important; }
+  .kpi.warn { color: var(--g-500) !important; }
+
+  /* Week tiles and progress bars */
+  .program-week-tile { background: var(--card-surface) !important; color: var(--black) !important; border-color: rgba(6,105,56,0.06) !important; }
+  .program-week-tile.selected { box-shadow: 0 14px 36px rgba(6,105,56,0.08) !important; border-color: rgba(6,105,56,0.14) !important; }
+  .program-week-tick.done { background: linear-gradient(90deg,var(--g-400),var(--g-500)) !important; }
+  .program-week-progress .bar { background: linear-gradient(90deg,var(--g-400),var(--g-500)) !important; }
+
+  /* Badges and small UI touches */
+  .threshold-source.local { background: rgba(10,163,106,0.06) !important; color: var(--black) !important; border-color: rgba(10,163,106,0.08) !important; }
+  .toast.success { border-left:4px solid var(--g-400) !important; background: var(--card-surface) !important; color: var(--black) !important; box-shadow:0 8px 18px rgba(2,6,23,0.06) }
+
+  /* Forms and inputs - soft green focus */
+  input:focus, select:focus, textarea:focus { border-color: var(--g-500) !important; box-shadow: 0 0 0 6px rgba(6,127,74,0.06) !important; }
+
+  /* Images/icons subtle borders */
+  .logo-img, .profile-card img { box-shadow: 0 6px 18px rgba(0,0,0,0.06) !important; border: 1px solid rgba(6,105,56,0.04) !important; }
+
+  /* Last-resort override: avoid hard-coded blues showing through */
+  [style*="#0f71ff"], [style*="#2f4ea1"], [style*="#3b57a9"] { color: inherit !important; background: transparent !important; }
+
+  /* End global green-theme overrides */
 .student-dashboard .card > h3{ color:#3b2b22 }
 
 /* Re-style internal content blocks so they look like panels on the white canvas */
@@ -122,6 +127,22 @@ body { background:var(--page-bg-color); background-image:var(--bg); color:var(--
 .rail-week-item{ width:40px; height:36px; display:grid; place-items:center; border-radius:8px; background:transparent; color:var(--muted); border:none; cursor:pointer; font-weight:700 }
 .rail-week-item.selected{ background: linear-gradient(90deg, rgba(37,99,235,0.08), rgba(37,99,235,0.02)); color:var(--text); }
 .rail-week-item.done{ background:var(--good); color:#fff }
+.rail-week-item.inprogress{ background: linear-gradient(90deg,#6366f1,#4f46e5); color:#fff }
+.rail-week-item.pending{ background:transparent; color:var(--muted) }
+
+/* Top horizontal week selector (moved from left rail) */
+.top-week-selector{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px }
+.top-week-btn{ padding:8px 12px; border-radius:8px; background:transparent; border:1px solid #eef2f6; cursor:pointer; font-weight:700; color:#475569 }
+.top-week-btn.selected{ background:#2563eb; color:#fff; border-color:transparent }
+.top-week-btn.done{ background:var(--good); color:#fff; border-color:transparent }
+.top-week-btn.inprogress{ background: linear-gradient(90deg,#6366f1,#4f46e5); color:#fff; border-color:transparent }
+
+/* Side (left) week selector used inside lesson card */
+.side-week-selector{ display:flex; flex-direction:column; gap:8px; }
+.side-week-btn{ width:56px; height:40px; border-radius:8px; background:transparent; border:1px solid #eef2f6; cursor:pointer; font-weight:700; color:#475569; display:inline-flex; align-items:center; justify-content:center; font-size:13px }
+.side-week-btn.selected{ background:#2563eb; color:#fff; border-color:transparent }
+.side-week-btn.done{ background:var(--good); color:#fff; border-color:transparent }
+.side-week-btn.inprogress{ background: linear-gradient(90deg,#6366f1,#4f46e5); color:#fff; border-color:transparent }
 
 /* Quick weeks duplicate inside main canvas (wrap style for small buttons) */
 #weekListMainInner .mini-week{ padding:8px 10px; border-radius:8px; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01)); color:var(--text); cursor:pointer; border:1px solid rgba(255,255,255,0.03); }
@@ -154,13 +175,45 @@ body { background:var(--page-bg-color); background-image:var(--bg); color:var(--
 @media (max-width:700px){ .student-dashboard .left-rail{ width:100%; flex-direction:row; justify-content:flex-start; padding:8px } .student-dashboard .left-rail .rail-btn{ width:40px;height:40px;border-radius:8px } .kpi-row{ justify-content:space-between } }
 
 /* Role specific tweaks */
-.student-dashboard.vendor { background: linear-gradient(180deg,#2f4ea1 0%, #3b57a9 100%); }
-.student-dashboard.vendor .program-week-tile.done { box-shadow: 0 12px 30px rgba(183,106,59,0.10); }
-.student-dashboard.vendor .btn-primary { background:#c4632f }
+/* Vendor dashboard: Deeper / Darker green (elegant, higher contrast) */
+.student-dashboard.vendor { background: linear-gradient(180deg,#052b20 0%, #0b6b44 100%); }
+.student-dashboard.vendor .program-week-tile.done { box-shadow: 0 14px 36px rgba(3,80,48,0.20); border-color: rgba(6,105,56,0.18); }
+.student-dashboard.vendor .btn-primary { background: #087a4f }
+.student-dashboard.vendor .kpi .value, .student-dashboard.vendor .kpi-row .value { color: #c9f7df }
 
-.student-dashboard.moto { background: linear-gradient(180deg,#15616d 0%, #1f8a8b 100%); }
-.student-dashboard.moto .program-week-tile.done { box-shadow: 0 12px 30px rgba(16,185,129,0.10); }
-.student-dashboard.moto .btn-primary { background:#0aa39a }
+/* Motorcyclist dashboard: Deeper / Darker green (distinct, refined) */
+.student-dashboard.moto { background: linear-gradient(180deg,#063c29 0%, #0e7a4c 100%); }
+.student-dashboard.moto .program-week-tile.done { box-shadow: 0 14px 36px rgba(6,120,78,0.20); border-color: rgba(12,140,90,0.16); }
+.student-dashboard.moto .btn-primary { background:#0a8f56 }
+.student-dashboard.moto .kpi .value, .student-dashboard.moto .kpi-row .value { color: #e6fbef }
+
+/* Replace remaining blue accents with green for Vendor view */
+.student-dashboard.vendor {
+  --canvas-bg-top: #063523;
+  --canvas-bg-bottom: #0b6b44;
+  --brand: #086948;
+  --brand-2: #12b57f;
+  --focus-ring: rgba(6,105,56,0.16);
+}
+.student-dashboard.vendor .top-week-btn.selected { background: linear-gradient(90deg,#0b8f5f,#087a4f); color:#fff; border-color:transparent }
+.student-dashboard.vendor .rail-week-item.inprogress { background: linear-gradient(90deg,#0b8f5f,#087a4f); color:#fff }
+.student-dashboard.vendor .rail-week-item.selected { background: linear-gradient(90deg, rgba(11,143,95,0.14), rgba(8,122,79,0.06)); border-left-color: var(--brand-2); }
+.student-dashboard.vendor .program-week-tile.selected { box-shadow: 0 18px 40px rgba(3,80,48,0.18); border-color: rgba(6,105,56,0.18); }
+.student-dashboard.vendor .program-week-progress .bar { background: linear-gradient(90deg,#16a34a,#059669); }
+
+/* Replace remaining blue accents with green for Motorcyclist view */
+.student-dashboard.moto{
+  --canvas-bg-top: #063c29;
+  --canvas-bg-bottom: #0e7a4c;
+  --brand: #0a8f56;
+  --brand-2: #0fb06f;
+  --focus-ring: rgba(10,143,86,0.16);
+}
+.student-dashboard.moto .top-week-btn.selected { background: linear-gradient(90deg,#0a8f56,#0fb06f); color:#fff; border-color:transparent }
+.student-dashboard.moto .rail-week-item.inprogress { background: linear-gradient(90deg,#0a8f56,#0fb06f); color:#fff }
+.student-dashboard.moto .rail-week-item.selected { background: linear-gradient(90deg, rgba(10,143,86,0.14), rgba(15,176,111,0.06)); border-left-color: var(--brand-2); }
+.student-dashboard.moto .program-week-tile.selected { box-shadow: 0 18px 40px rgba(6,120,78,0.18); border-color: rgba(12,140,90,0.16); }
+.student-dashboard.moto .program-week-progress .bar { background: linear-gradient(90deg,#059669,#10b981); }
 
 /* Make sure vendor/moto class styling applies when body has them */
 /* body role classes are used on <body> for high-level theme switching */
@@ -209,14 +262,22 @@ input:focus,select:focus {
 /* ---------- Dashboard Layout ---------- */
 .container { display:flex; min-height:100vh; }
 .sidebar {
-  width:260px; background:#0b1220; color:#e5e7eb; display:flex; flex-direction:column;
-  padding:22px 16px; gap:18px;
+  width:260px; /* match screenshot width */
+  background: linear-gradient(180deg, rgba(6,150,90,0.18) 0%, rgba(4,120,70,0.08) 100%);
+  color:var(--text); display:flex; flex-direction:column; justify-content:flex-start;
+  padding:22px 18px; gap:18px; border-right:1px solid rgba(255,255,255,0.04);
 }
-.sidebar .brand-row { display:flex; align-items:center; gap:10px; }
+.sidebar .brand-row { display:flex; align-items:center; gap:12px; }
 .nav a {
-  display:block; padding:12px; border-radius:10px; color:#cfd8e3; text-decoration:none;
+  display:block; padding:12px 14px; border-radius:10px; color:rgba(255,255,255,0.9); text-decoration:none;
+  display:flex; align-items:center; gap:12px; font-weight:700; transition:background .12s ease, transform .12s ease;
 }
-.nav a.active, .nav a:hover { background:#101827; color:#fff; }
+.nav a:hover { background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); transform:translateX(4px); }
+.nav a.active {
+  background: linear-gradient(90deg, rgba(6,150,90,0.16), rgba(6,150,90,0.06));
+  color:#ffffff; box-shadow: 0 8px 24px rgba(4,120,70,0.14);
+  border-left:4px solid var(--brand-2); padding-left:10px;
+}
 .main { flex:1; padding:22px; display:flex; flex-direction:column; gap:18px; }
 .topbar {
   background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
@@ -290,69 +351,199 @@ input:focus,select:focus {
 /* Layout helpers */
 .content-wrapper{max-width:1100px;margin:2rem auto;padding:1rem}
 .flex-1{flex:1}
-.ml-2{margin-left:.5rem}
-.role-section{margin-top:0.8rem}
-
-.flex-row{display:flex;align-items:center;gap:.5rem}
-.role-select{margin-left:.5rem;padding:.35rem;border-radius:6px;border:1px solid var(--line);}
-.profile-name{font-weight:700}
-.profile-email{color:var(--muted);font-size:0.95rem}
-
-/* Profile card styling: single prominent circular image */
-.profile-card{display:flex;gap:14px;align-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.6);}
-.profile-card img{width:112px;height:112px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.06);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
-.brand-title{font-weight:800;font-size:16px}
-.tag{color:var(--muted);font-size:12px}
-
-/* Video/lesson helpers */
-.video-player{width:100%;max-height:320px;border-radius:8px}
-.video-placeholder{background:linear-gradient(90deg, rgba(0,0,0,0.2), rgba(255,255,255,0.02)); color:var(--muted); height:220px;border-radius:8px;display:flex;align-items:center;justify-content:center}
-.exercise-card{padding:.6rem;margin-bottom:.5rem}
-.option-label{display:block}
-.mt-1{margin-top:1.25rem}
-
-/* Week detail layout (dashboard) */
-.week-detail-root{padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));border:1px solid rgba(255,255,255,0.03)}
-.week-detail-root{padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01));border:1px solid rgba(255,255,255,0.04);box-shadow:0 10px 30px rgba(2,6,23,0.35)}
-.week-media{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
-.week-video{width:100%;max-height:420px;border-radius:10px;display:block;box-shadow:0 8px 24px rgba(2,6,23,0.25)}
-.week-activities{margin-top:8px}
-.week-activities ul{padding-left:18px;margin-top:8px}
-.week-activities li{margin-bottom:8px;font-size:15px;line-height:1.4}
-.week-body{display:flex;flex-direction:column;gap:14px}
-.week-body > div{background:transparent;padding:6px}
-.exercise-card{padding:.75rem;margin-bottom:.6rem;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.01));border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
-
-.week-detail-root h4{font-size:18px;margin-bottom:8px;color:var(--text)}
-.week-detail-root strong{color:var(--text)}
-
-@media (max-width:700px){
-  .week-video{max-height:220px}
-  .program-week-grid{grid-template-columns:repeat(2,1fr)}
+:root {
+  --g-900: #052b20;
+  --g-800: #073b29;
+  --g-700: #0b6b44;
+  --g-600: #0f8f56;
+  --g-500: #12b57f;
+  --g-400: #34d399;
+  --g-300: #9be3c6;
+  --g-100: #edf9f2;
+  --white: #ffffff;
+  --black: #071019;
+  --surface: #ffffff;
+  --muted-green: #9be3c6;
 }
 
-/* Lesson card small utilities */
-.lesson-card { padding:12px; }
-.lesson-title { margin:0 0 6px 0; font-size:15px }
-.lesson-summary { margin:0 0 10px 0; color:var(--muted); font-size:0.95rem }
+/* Page background remains green; canvas and cards use white surface for contrast */
+body { background: linear-gradient(180deg, var(--g-900) 0%, var(--g-700) 100%) !important; color: var(--white) !important; }
+.student-dashboard .canvas, .canvas { background: var(--surface) !important; color: var(--black) !important; box-shadow: 0 30px 60px rgba(2,6,23,0.22) !important; }
 
-/* Table utilities */
-.text-right { text-align:right }
-.td-tight { max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+/* Cards and panels use white surface with subtle green borders */
+.card, .panel, .modal-card, .popover-card { background: var(--surface) !important; border: 1px solid rgba(6,105,56,0.08) !important; color: var(--black) !important; }
 
-/* Upcoming list */
-.upcoming-item{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line)}
-.upcoming-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.upcoming-date{white-space:nowrap;color:var(--muted);font-size:0.95rem}
+/* Headings and prominent text */
+.canvas h1, .canvas h2, .canvas h3, .canvas h4, .card > h3 { color: var(--black) !important; }
+.lesson-title, .profile-name { color: var(--black) !important; }
 
-/* Calendar widget styles */
-.calendar-widget{display:flex;flex-direction:column;gap:10px}
-.calendar-header{display:flex;justify-content:space-between;align-items:center}
-.calendar-nav{display:flex;gap:8px;align-items:center}
-.calendar-nav button{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:8px}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:0.85rem}
-.calendar-grid .day{min-height:44px;padding:8px;border-radius:8px;text-align:right;background:transparent;color:var(--text);position:relative;border:1px solid transparent}
-.calendar-grid .day.header{font-weight:700;color:var(--muted);background:transparent;border:none;text-align:center}
+/* Muted text -> soft green/muted black */
+.muted, .canvas .muted, .profile-email { color: var(--muted-green) !important; }
+
+/* Buttons and links */
+.btn-primary { background: var(--g-600) !important; color: var(--white) !important; border-color: transparent !important; }
+.btn-primary:hover { background: var(--g-500) !important; }
+.btn, .link-btn { color: var(--black) !important; border-color: rgba(6,105,56,0.06) !important; background: transparent !important; }
+.canvas a { color: var(--g-600) !important; }
+
+/* Topbar and nav */
+.topbar { background: var(--surface) !important; border-color: rgba(6,105,56,0.04) !important; }
+.sidebar, .student-dashboard .sidebar { background: linear-gradient(180deg, var(--g-900), var(--g-800)) !important; }
+
+/* Left rail and rail buttons */
+.left-rail, .student-dashboard .left-rail { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01)) !important; }
+.rail-btn { background: transparent !important; color: var(--g-100) !important; }
+.rail-btn.active, .rail-btn[aria-pressed="true"] { background: linear-gradient(180deg,var(--g-700),var(--g-600)) !important; color:var(--white) !important; box-shadow:0 12px 30px rgba(4,80,50,0.18) !important; }
+.rail-btn:hover { box-shadow:0 10px 24px rgba(4,80,50,0.10) !important; }
+
+/* KPI and stat colors */
+.kpi, .kpi .value { background: transparent !important; color: var(--black) !important; }
+.kpi.good { color: var(--g-400) !important; }
+.kpi.warn { color: var(--g-500) !important; }
+
+/* Week tiles and progress bars */
+.program-week-tile { background: var(--surface) !important; color: var(--black) !important; border-color: rgba(6,105,56,0.06) !important; }
+.program-week-tile.selected { box-shadow: 0 18px 40px rgba(3,80,48,0.12) !important; border-color: rgba(6,105,56,0.18) !important; }
+.program-week-tick.done { background: linear-gradient(90deg,var(--g-400),var(--g-500)) !important; }
+.program-week-progress .bar { background: linear-gradient(90deg,var(--g-400),var(--g-500)) !important; }
+
+/* Progress summary, badges and small UI touches */
+.threshold-source.local { background: rgba(10,163,106,0.06) !important; color: var(--black) !important; border-color: rgba(10,163,106,0.08) !important; }
+.toast.success { border-left:4px solid var(--g-400) !important; background: var(--surface) !important; color: var(--black) !important; }
+
+/* Forms and inputs - subtle green focus */
+input:focus, select:focus, textarea:focus { border-color: var(--g-500) !important; box-shadow: 0 0 0 4px rgba(6,127,74,0.06) !important; }
+
+/* Ensure images/icons remain visible on dark green backgrounds */
+.logo-img, .profile-card img { box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important; border: 2px solid rgba(6,105,56,0.06) !important; }
+
+/* Last-resort override: avoid hard-coded blues showing through */
+[style*="#0f71ff"], [style*="#2f4ea1"], [style*="#3b57a9"] { color: inherit !important; background: transparent !important; }
+
+/* End global green-theme overrides */
+}
+/* ------------------------------------------------------------------ */
+/* Light mockup restore (returns UI to white canvas/cards)            */
+/* This block intentionally re-establishes the original light theme   */
+/* without touching any JavaScript or functionality.                   */
+/* It sits at the end of the stylesheet so it wins over earlier rules.*/
+/* ------------------------------------------------------------------ */
+:root {
+  --page-bg: #f7fafc; /* soft off-white page background */
+  --surface: #ffffff; /* primary canvas and card surfaces */
+  --card-surface: #ffffff;
+  --white: #ffffff;
+  --black: #071019;
+  --text: #0b1220;
+  --muted: #6b7280;
+  --line: rgba(15,23,42,0.06);
+  --brand: #2563eb; /* keep brand blue by default for links/buttons */
+  --brand-2: #1d4ed8;
+  --focus-ring: rgba(37,99,235,0.12);
+  --good: #16a34a;
+}
+
+/* Page background and canvas (light mockup) */
+body { background: var(--page-bg) !important; color: var(--text) !important; }
+.canvas, .student-dashboard .canvas { background: var(--surface) !important; color: var(--text) !important; box-shadow: 0 8px 24px rgba(2,6,23,0.06) !important; }
+
+/* Cards & panels: crisp white */
+.card, .panel, .modal-card, .popover-card { background: var(--card-surface) !important; color: var(--text) !important; border: 1px solid var(--line) !important; box-shadow: 0 6px 18px rgba(2,6,23,0.04) !important; }
+
+/* Headings and text */
+.canvas h1, .canvas h2, .canvas h3, .canvas h4, .card > h3 { color: var(--text) !important; }
+.muted, .canvas .muted, .profile-email { color: var(--muted) !important; }
+
+/* Buttons & links (return to blue brand for interactive affordance) */
+.btn-primary { background: linear-gradient(90deg,var(--brand),var(--brand-2)) !important; color: var(--white) !important; border: none !important; }
+.btn-primary:hover { background: linear-gradient(90deg,var(--brand-2),#0ea5e9) !important; }
+.btn, .link-btn { color: var(--text) !important; border: 1px solid var(--line) !important; background: transparent !important; }
+.canvas a, a { color: var(--brand) !important; }
+
+/* Topbar & sidebar: light surfaces */
+.topbar { background: var(--surface) !important; border-color: var(--line) !important; box-shadow: 0 6px 18px rgba(2,6,23,0.04) !important; }
+.sidebar { background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96)) !important; color: var(--text) !important; border-right: 1px solid var(--line) !important; }
+
+/* Left rail: neutral light rail */
+.left-rail, .student-dashboard .left-rail { background: linear-gradient(180deg, rgba(15,23,42,0.02), rgba(15,23,42,0.01)) !important; }
+.rail-btn { background: #f1f5f9 !important; color: rgba(15,23,42,0.7) !important; }
+.rail-btn.active, .rail-btn[aria-pressed="true"] { background: linear-gradient(180deg,#eef2ff,#f8fafc) !important; color: var(--brand) !important; box-shadow: 0 8px 20px rgba(2,6,23,0.06) !important; }
+
+/* Week items: neutral, with green success */
+.rail-week-item.selected, .top-week-btn.selected, .side-week-btn.selected { background: linear-gradient(90deg, rgba(37,99,235,0.08), rgba(37,99,235,0.02)) !important; color: var(--text) !important; }
+.rail-week-item.inprogress, .top-week-btn.inprogress, .side-week-btn.inprogress { background: linear-gradient(90deg,#6366f1,#4f46e5) !important; color: #fff !important; }
+.rail-week-item.done, .top-week-btn.done, .side-week-btn.done { background: var(--good) !important; color: #fff !important; }
+
+/* Program week tiles: white with soft border */
+.program-week-tile { background: linear-gradient(180deg,#ffffff,#fbfbfb) !important; color: var(--text) !important; border: 1px solid var(--line) !important; box-shadow: 0 6px 18px rgba(2,6,23,0.04) !important; }
+.program-week-tile.selected { box-shadow: 0 14px 36px rgba(2,6,23,0.06) !important; border-color: rgba(15,23,42,0.06) !important; }
+.program-week-progress .bar { background: linear-gradient(90deg,#16a34a,#059669) !important; }
+
+/* Inputs focus ring to blue brand (non-functional) */
+input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 6px rgba(37,99,235,0.06) !important; border-color: rgba(37,99,235,0.12) !important; }
+
+/* Toasts neutral background */
+.toast { background: var(--surface) !important; color: var(--text) !important; box-shadow: 0 8px 30px rgba(2,6,23,0.06) !important; }
+
+/* Neutralize any strong green overrides that may remain */
+[class*="g-"] { }
+
+/* End light mockup restore */
+
+/* ------------------------------------------------------------------ */
+/* Strong green override (final safety net)                            */
+/* Ensures any remaining blue/purple accents are mapped to greens      */
+/* ------------------------------------------------------------------ */
+:root { --final-green-1: var(--g-600); --final-green-2: var(--g-500); }
+
+/* Replace specific blue/purple selected states with green variants */
+.top-week-btn.selected,
+.side-week-btn.selected,
+.rail-week-item.selected,
+.rail-week-item.inprogress,
+.rail-week-item.done,
+.rail-week-item,
+.rail-week-item:hover,
+.mini-week.selected {
+  background: linear-gradient(90deg, var(--final-green-1), var(--final-green-2)) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 20px rgba(6,127,74,0.06) !important;
+}
+
+/* Make primary buttons and their focus rings consistently green */
+.btn-primary { background: var(--g-600) !important; color: #fff !important; border-color: transparent !important; }
+.btn-primary:hover { background: var(--g-500) !important; }
+.btn-primary:focus, .btn-primary:focus-visible, .btn:focus-visible, .link-btn:focus-visible { outline: 3px solid var(--focus-ring) !important; outline-offset: 2px !important; }
+
+/* Replace remaining blue/purple top-left selected indicators */
+.course-sidebar .week-item.selected,
+.course-sidebar .week-item.selected .check,
+.course-sidebar .week-item.done .check,
+.week-item.done .check,
+.week-item.done .week-check { background: linear-gradient(90deg,var(--g-400),var(--g-500)) !important; color:#fff !important; border-color: transparent !important; }
+
+/* Calendar today highlight -> green */
+.calendar-card .day.today { background: linear-gradient(180deg,#16a34a,#059669) !important; color: #fff !important; box-shadow: 0 8px 24px rgba(6,127,74,0.16) !important; border: none !important; }
+
+/* Replace focus and outline blues used earlier */
+.search-highlight { outline: 3px solid rgba(6,127,74,0.12) !important; box-shadow: 0 14px 40px rgba(6,127,74,0.06) !important; }
+.program-week-tile:focus-visible { border-color: rgba(6,127,74,0.18) !important; box-shadow: 0 18px 40px rgba(6,127,74,0.12) !important; }
+
+/* Neutralize hard-coded blue/purple inline styles where possible */
+[style*="#2563eb"], [style*="#6366f1"], [style*="#4f46e5"], [style*="#6d28d9"], [style*="#0f71ff"], [style*="#3730a3"] {
+  background: transparent !important;
+  color: inherit !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* Ensure cards and canvas keep white surfaces for legibility */
+.canvas, .card, .panel, .modal-card { background: var(--surface) !important; color: var(--black) !important; }
+
+/* Final note: this block is intentionally specific and uses !important to
+   ensure the prototype maintains a consistent green-first appearance
+   even where older styles or inline values remain. */
 .calendar-grid .day.today{box-shadow:0 6px 18px rgba(2,6,23,0.08);border:1px solid rgba(255,255,255,0.04)}
 .calendar-grid .day .dot{position:absolute;left:8px;top:8px;width:8px;height:8px;border-radius:50%;background:var(--brand);}
 .calendar-grid .day.has-deadline{background:linear-gradient(180deg,rgba(6,150,90,0.06),transparent);border:1px solid rgba(6,150,90,0.09)}
@@ -505,13 +696,16 @@ input:focus,select:focus {
 /* Prototype canvas & left rail (from dashboard.html) */
 .app-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
 .canvas{width:1100px;background:var(--card);border-radius:12px;box-shadow:0 8px 24px rgba(2,6,23,0.15);display:flex;overflow:visible;gap:18px}
-.left-rail{width:72px;background:transparent;padding:12px 8px;display:flex;flex-direction:column;gap:8px;align-items:center;border-right:1px solid rgba(0,0,0,0.04)}
-.rail-btn{width:48px;height:48px;border-radius:10px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer}
-.rail-btn.active{background:linear-gradient(180deg,#8b5cf6,#7c3aed);color:#fff;box-shadow:0 8px 24px rgba(124,58,237,0.18);transform:translateY(-2px)}
-/* icon color and hover polish */
-.rail-btn svg{width:20px;height:20px;color:var(--muted);transition:color .14s ease,transform .12s ease}
-.rail-btn:hover svg{color:#6d28d9;transform:translateY(-2px)}
-.rail-btn.active svg{color:#fff}
+.left-rail{width:76px; /* narrow icon rail width */
+  background: linear-gradient(180deg, rgba(6,150,90,0.12), rgba(4,120,70,0.06));
+  padding:12px 10px; display:flex; flex-direction:column; gap:10px; align-items:center;
+  border-right:1px solid rgba(255,255,255,0.03); border-top-left-radius:12px; border-bottom-left-radius:12px;
+}
+.rail-btn{width:52px; height:52px; border-radius:12px; border:0; background:transparent; color:rgba(255,255,255,0.9); display:grid; place-items:center; cursor:pointer; transition:transform .12s ease, box-shadow .12s ease, background .12s ease}
+.rail-btn:hover{ transform:translateY(-4px); box-shadow:0 10px 24px rgba(4,120,70,0.08); background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+.rail-btn svg{width:20px;height:20px;color:rgba(255,255,255,0.88); transition:color .14s ease, transform .12s ease}
+.rail-btn.active{ background: linear-gradient(180deg, var(--brand), var(--brand-2)); color:#fff; box-shadow:0 12px 30px rgba(4,120,70,0.16); transform:translateY(-2px)}
+.rail-btn.active svg{ color:#fff }
 .main-area{flex:1;padding:20px}
 .top-row{display:flex;justify-content:space-between;align-items:center}
 .kpi-row{display:flex;gap:12px;margin-top:14px}
@@ -587,4 +781,136 @@ input:focus,select:focus {
 
 /* Slightly larger base for cards and lesson text to improve legibility */
 .card { font-size:14px }
+
+/* ------------------------------------------------------------------ */
+/* Global Green Theme Overrides (apply a unified green-only palette)  */
+/* This block intentionally targets visual properties only; no JS
+   behavior is changed. Use with care — overrides use !important where
+   necessary to ensure consistent theme across the prototype. */
+/* ------------------------------------------------------------------ */
+:root {
+  --g-900: #052b20;
+  --g-800: #073b29;
+  --g-700: #0b6b44;
+  --g-600: #0f8f56;
+  --g-500: #12b57f;
+  --g-400: #34d399;
+  --g-300: #9be3c6;
+  --g-100: #edf9f2;
+}
+
+/* Page background and primary canvas */
+body, .student-dashboard .canvas { background: linear-gradient(180deg, var(--g-900) 0%, var(--g-700) 100%) !important; color: #e6f6ef !important; }
+.canvas { box-shadow: 0 30px 60px rgba(2,6,23,0.22) !important; }
+
+/* Cards: subtle green-tinted panels */
+.card, .panel, .modal-card, .popover-card { background: linear-gradient(180deg, rgba(11,107,68,0.06), rgba(11,107,68,0.03)) !important; border-color: rgba(255,255,255,0.03) !important; color: #eaf7ef !important; }
+
+/* Headings and prominent text */
+.canvas h1, .canvas h2, .canvas h3, .canvas h4, .card > h3 { color: #eafff3 !important; }
+.lesson-title, .profile-name { color: #f3fff6 !important; }
+
+/* Muted text -> soft green */
+.muted, .canvas .muted, .profile-email { color: var(--g-300) !important; }
+
+/* Buttons and links */
+.btn-primary { background: var(--g-600) !important; color: #fff !important; border-color: transparent !important; }
+.btn-primary:hover { background: var(--g-500) !important; }
+.btn, .link-btn { color: #e9fbf0 !important; border-color: rgba(255,255,255,0.04) !important; }
+a, .canvas a { color: var(--g-300) !important; }
+
+/* Topbar and nav */
+.topbar { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) !important; border-color: rgba(255,255,255,0.02) !important; }
+.sidebar, .student-dashboard .sidebar { background: linear-gradient(180deg, var(--g-900), var(--g-800)) !important; }
+
+/* Left rail and rail buttons */
+.left-rail, .student-dashboard .left-rail { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.01)) !important; }
+.rail-btn { background: transparent !important; color: #e9fbf0 !important; }
+.rail-btn.active, .rail-btn[aria-pressed="true"] { background: linear-gradient(180deg,var(--g-700),var(--g-600)) !important; color:#fff !important; box-shadow:0 12px 30px rgba(4,80,50,0.18) !important; }
+.rail-btn:hover { box-shadow:0 10px 24px rgba(4,80,50,0.10) !important; }
+
+/* KPI and stat colors */
+.kpi, .kpi .value { background: rgba(255,255,255,0.02) !important; color: #eafff3 !important; }
+.kpi.good { color: var(--g-400) !important; }
+.kpi.warn { color: var(--g-500) !important; }
+
+/* Week tiles and progress bars */
+.program-week-tile { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.01)) !important; color: #eafff3 !important; border-color: rgba(255,255,255,0.03) !important; }
+.program-week-tile.selected { box-shadow: 0 18px 40px rgba(3,80,48,0.18) !important; border-color: rgba(6,105,56,0.18) !important; }
+.program-week-tick.done { background: linear-gradient(90deg,var(--g-400),var(--g-500)) !important; }
+.program-week-progress .bar { background: linear-gradient(90deg,var(--g-400),var(--g-500)) !important; }
+
+/* Progress summary, badges and small UI touches */
+.threshold-source.local { background: rgba(10,163,106,0.06) !important; color: #eafff3 !important; border-color: rgba(10,163,106,0.08) !important; }
+.toast.success { border-left:4px solid var(--g-400) !important; }
+
+/* Forms and inputs - subtle green focus */
+input:focus, select:focus, textarea:focus { border-color: var(--g-500) !important; box-shadow: 0 0 0 4px rgba(6,127,74,0.12) !important; }
+
+/* Ensure images/icons remain visible on dark green backgrounds */
+.logo-img, .profile-card img { box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important; border: 2px solid rgba(255,255,255,0.04) !important; }
+
+/* Last-resort override: avoid hard-coded blues showing through */
+[style*="#0f71ff"], [style*="#2f4ea1"], [style*="#3b57a9"] { color: inherit !important; background: transparent !important; }
+
+/* End global green-theme overrides */
+
+/* ------------------------------------------------------------------ */
+/* Ensure white text on green backgrounds (contrast fix)              */
+/* Targets: sidebar, left-rail, vendor/moto top-level areas, nav links */
+/* Does not change any JavaScript or interactive behavior.            */
+/* ------------------------------------------------------------------ */
+.sidebar,
+.student-dashboard.vendor .sidebar,
+.student-dashboard.moto .sidebar,
+.student-dashboard.vendor .left-rail,
+.student-dashboard.moto .left-rail {
+  color: var(--white) !important;
+}
+
+/* Navigation links inside green sidebar should be white */
+.student-dashboard.vendor .nav a,
+.student-dashboard.moto .nav a,
+.student-dashboard.vendor .nav a:hover,
+.student-dashboard.moto .nav a:hover {
+  color: rgba(255,255,255,0.96) !important;
+}
+.student-dashboard.vendor .nav a.active,
+.student-dashboard.moto .nav a.active {
+  color: #fff !important;
+}
+
+/* Rail buttons and icons on green rails */
+.student-dashboard.vendor .rail-btn,
+.student-dashboard.moto .rail-btn,
+.student-dashboard.vendor .rail-btn svg,
+.student-dashboard.moto .rail-btn svg {
+  color: var(--white) !important;
+}
+
+/* KPI and header text in vendor/moto views */
+.student-dashboard.vendor .kpi,
+.student-dashboard.moto .kpi,
+.student-dashboard.vendor .kpi .value,
+.student-dashboard.moto .kpi .value,
+.student-dashboard.vendor .brand-text,
+.student-dashboard.moto .brand-text,
+.student-dashboard.vendor .user-chip,
+.student-dashboard.moto .user-chip {
+  color: var(--white) !important;
+}
+
+/* Keep canvas and card surfaces readable (they override to dark text elsewhere) */
+.student-dashboard.vendor .canvas, .student-dashboard.moto .canvas,
+.student-dashboard.vendor .canvas *, .student-dashboard.moto .canvas * {
+  color: inherit; /* let existing canvas rules control text color */
+}
+
+/* Safety: nav badges and small labels on green surfaces */
+.student-dashboard.vendor .user-badge, .student-dashboard.moto .user-badge,
+.student-dashboard.vendor .profile-name, .student-dashboard.moto .profile-name {
+  color: var(--white) !important;
+}
+
+/* End contrast fixes */
 
