@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Puente — Login</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body class="auth-body">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="logo-circle" aria-hidden="false">
+        <img src="Images/puentelogo.png" alt="Puente logo" class="logo-img" />
+      </div>
+      <div class="brand-text">
+        <h1>Puente</h1>
+        <p>Bridging the digital divide</p>
+      </div>
+    </div>
+
+    <form id="loginForm" class="auth-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" placeholder="e.g. delucie.r" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="••••••••" required />
+      </div>
+
+      <div class="form-group">
+        <label for="role">Select Role</label>
+        <select id="role" name="role" required>
+          <option value="" disabled selected>Choose your role</option>
+          <option value="student">Student (then choose Vendor or Motorcyclist)</option>
+          <option value="contributor">Contributor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-primary">Login</button>
+      <p class="muted">Demo: pick any role to explore the dashboards.</p>
+    </form>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Simple demo login handler: store a minimal user object and redirect
+    (function(){
+      const form = document.getElementById('loginForm');
+      if (!form) return;
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        const username = document.getElementById('username').value || 'student';
+        const role = document.getElementById('role').value || 'student';
+        const user = { name: username, role };
+        try{ sessionStorage.setItem('puente_user', JSON.stringify(user)); sessionStorage.setItem('puente_role', role); }catch(e){}
+        // If user logs in as student, send them to the student dashboard where
+        // they choose whether to continue as vendor or motorcyclist.
+        if (role === 'student'){
+          window.location.href = 'student-dashboard.html';
+          return;
+        }
+        // Admins go to admin UI if available, otherwise student dashboard for demo
+        if (role === 'admin'){
+          window.location.href = 'admin-module-videos.html';
+          return;
+        }
+        // If contributor selected, go straight to contributor dashboard
+        if (role === 'contributor'){
+          window.location.href = 'dashboard-contributor.html';
+          return;
+        }
+        // Default fallback: student dashboard
+        window.location.href = 'student-dashboard.html';
+      });
+    })();
+  </script>
+</body>
+</html>

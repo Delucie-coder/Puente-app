@@ -13,88 +13,141 @@ set PORT=3001
 npm.cmd start
 ```
 
-2. Open the front-end in your browser:
+# Puente-app — Complete local setup and developer guide
 
-http://localhost:3001/contributor.html  (Contributor UI)
-http://localhost:3001/dashboard.html    (Main dashboard)
+This repository contains a small vanilla front-end and a Node.js mock API (Express) used for local development and demos. The mock server persists data to JSON files under `puente-html-version/server/data` and serves uploaded files from `/uploads`.
 
-Seeded demo admin credentials (for convenience):
+This README gives a complete, step-by-step set of instructions to get the project running on Windows using `cmd.exe`. Follow each step exactly to avoid environment issues.
 
-- Email: `admin@example.com`
-- Password: `adminpass`
+**Contents**
+- Prerequisites
+- Clone / download
+- Install server dependencies
+- Start the mock server
+- Open the front-end
+- Run built-in smoke tests
+- Data layout and where files live
+- Troubleshooting & tips
+- Security & limitations
+
+**Prerequisites**
+- Install Node.js (recommended LTS) from https://nodejs.org/ and verify:
+
+  `node -v`
+  `npm -v`
+
+  Use Node 16+ (LTS) or newer. If you use nvm for Windows, ensure the active version matches.
+- Git is optional if you clone the repo. You can also download the ZIP.
+
+**1) Clone or download the repository**
+- Clone with Git (recommended):
+
+  `git clone https://github.com/Delucie-coder/Puente-app.git`
+
+  or download and extract the ZIP from GitHub and open the folder in Explorer.
+
+**2) Open a Windows Command Prompt**
+- Use `cmd.exe`. Do not use PowerShell for these examples (some Windows environments block npm execution or use different `set` semantics). Open a Command Prompt in the project root (the folder that contains this `README.md`).
+
+**3) Install server dependencies**
+- The mock API lives in `puente-html-version/server` and contains its own `package.json`.
+
+Run these commands in order from a `cmd.exe` prompt:
+
+```
+cd C:\Users\Hp\Desktop\Puente-app\puente-html-version\server
+npm.cmd install
+```
 
 Notes:
-- The server returns a token on `POST /api/login`. When logging in with a password the server will persist a token on the user record so you can use `Authorization: Bearer <token>` for subsequent requests.
+- On Windows `cmd.exe` we use `npm.cmd` to avoid shell alias issues. If you use a different shell (WSL, Git Bash) you can run `npm install` normally.
 
-## Useful developer scripts
+**4) Configure the port (optional)**
+- By default the server listens on `process.env.PORT || 3001`.
+- To change the port for this session (cmd.exe):
 
-- `server/scripts/test_settings_save.js` — logs in as the demo admin, POSTs a lesson pass-threshold, and confirms it persisted to `data/settings.json`.
-- `server/scripts/test_upload.js` — logs in as admin and uploads `server/test_assets/sample.txt` as a base64 dataUrl, then verifies the resource is listed.
+```
+set PORT=3001
+npm.cmd start
+```
 
-Run tests (while the server is running) from the `server` folder:
+Enter the `set` command then run `npm.cmd start` on the next line so the environment variable is visible to the server process.
 
-```cmd
+**5) Start the mock server**
+- From the same `server` folder run:
+
+```
+npm.cmd start
+```
+
+- This runs `node server.js` (see `puente-html-version/server/package.json`). The console should show express listening on the chosen port, e.g. `Listening on 3001`.
+
+**6) Open the front-end in your browser**
+- The front-end files are served by the mock server at the chosen port. Open these URLs in your browser (replace `3001` if you used a different port):
+
+```
+http://localhost:3001/contributor.html   (Contributor UI)
+http://localhost:3001/dashboard.html     (Main dashboard)
+http://localhost:3001/index.html         (Landing / index pages)
+```
+
+Tip: If a page is not found, confirm the server started successfully and that you used the same port in the URL.
+
+**7) Demo credentials and authentication**
+- The mock server will create a user record when you sign in from the UI. For convenience some demo credentials may be seeded in `server/data/users.json`.
+- Example seeded admin (if present):
+
+```
+Email: admin@example.com
+Password: adminpass
+```
+
+- Authentication: `POST /api/login` returns `{ token, user }`. Subsequent API requests that require auth expect the header `Authorization: Bearer <token>`.
+
+**8) Run the included smoke tests (optional)**
+- Several handy scripts live in `puente-html-version/server/scripts` for quick checks. Run these while the server is running in a separate command window.
+
+From `puente-html-version/server`:
+
+```
 node scripts/test_settings_save.js
 node scripts/test_upload.js
 ```
 
-## Endpoints overview
+- There are also quick platform-specific runner scripts in `puente-html-version/server`:
 
-Authentication note: include the header `Authorization: Bearer <token>` for endpoints that require authentication (admin-only endpoints require an admin user and token).
+```
+smoke-test.bat    (Windows batch)
+smoke-test.ps1    (PowerShell)
+```
 
-- POST /api/login
-  - Body: `{ "email": "...", "password": "...", "role": "vendor|moto|admin" }`
-  - Returns: `{ token, user }`.
+Run `smoke-test.bat` from `cmd.exe` while the server is running to execute a small list of smoke checks.
 
-- GET /api/settings?lessonId=<id>
-  - Public. Returns `{ passThreshold: number, source: 'lesson'|'default' }`.
+**9) Where data and uploads are stored**
+- Data files: `puente-html-version/server/data/*.json` (users, lessons, resources, progress, etc.)
+- Uploaded files: `puente-html-version/server/data/uploads/`
+- If you manually drop media files into the `uploads` folder, update `puente-html-version/server/data/lessons.json` if you changed filenames referenced by lessons.
 
-- POST /api/settings
-  - Admin-only. Body: `{ passThreshold: number, lessonId?: string }`.
+**10) Common troubleshooting**
+- Node not found: ensure Node is installed and `node -v` works.
+- `npm` permission or blocked on PowerShell: open `cmd.exe` and use `npm.cmd` as shown.
+- Port in use: choose a different port, e.g. `set PORT=3002` then `npm.cmd start` and open `http://localhost:3002`.
+- File uploads not visible: confirm files are present in `server/data/uploads` and restart the server.
 
-- GET /api/lessons
-- GET /api/lesson/:id
-- GET /api/lesson/:id/week/:week
+**11) Security & limitations**
+- This mock server is only for local development and demos. It stores tokens on the user record and does not expire tokens. Do not reuse this approach in production.
+- Data is stored in flat JSON files and is not suitable for concurrent production workloads.
 
-- POST /api/attempts
-  - Auth required. Body: `{ lessonId, week, answers: [] }`.
+**Developer notes & next steps**
+- The server `package.json` exposes `start` which runs `node server.js`.
+- If you want a single-command start from the repo root you can add a root-level script or a wrapper that `cd`s into the server folder and runs `npm start`.
+- I can help add a `docker-compose` setup, a CI test runner, or a single `npm` script to start both server and open a browser.
 
-- GET /api/attempts?lessonId=&week=
-- GET /api/progress/summary?lessonId=&week=
+---
 
-- GET /api/resources
-- POST /api/resource
-  - Supports either JSON `{ title, dataUrl?, filename?, audience? }` or multipart `file` field (multipart/form-data).
-  - When uploading a file with multipart, use field name `file` (the front-end contributor UI already sends FormData when a file is selected).
+If you'd like, I can now:
+- add a `Makefile`/`npm` script to start the server from the repo root,
+- create a short quickstart `PS1` and `BAT` wrapper that sets the port and starts the server,
+- or also expand this README with per-page usage instructions for `dashboard.html`, `admin.html`, and `contributor.html`.
 
-## Contributor UI
-
-Open `http://localhost:3001/contributor.html` in your browser.
-
-- Sign in using an email (the demo server will create a user record and return a token).
-- You can upload a resource by selecting a `file` or by providing a hosted file URL.
-- Uploaded files are saved under `server/data/uploads` and the resource record includes `url` pointing to `/uploads/<filename>`.
-- The contributor listing shows previews for images, icons for PDF/video, and provides `Open` and `Copy URL` actions.
-
-## Replacing lesson media
-
-1. Place your media files into `puente-html-version/server/data/uploads/`.
-2. If you change filenames, update `puente-html-version/server/data/lessons.json` for the affected lesson/week `videoUrl`/`audioUrl` fields.
-3. Restart the server to pick up file changes.
-
-## Tips & troubleshooting
-
-- If PowerShell blocks `npm` due to execution policy, use `cmd.exe` and run `npm.cmd` as shown above.
-- If port 3001 is already in use, start the server with a different port: `set PORT=3002` then `npm.cmd start` and open the front-end at `http://localhost:3002`.
-
-## Security & limitations
-
-- This mock server is for local development only. Tokens are stored on the server user record and do not expire; do not use this approach in production.
-- Data is stored in JSON files under `puente-html-version/server/data/` and the file-based approach is not suitable for concurrent production workloads.
-
-## Next steps I can help with
-
-- Add a CI-friendly test runner that starts the server, runs the test scripts, and reports results.
-- Add detailed README sections for each front-end page (dashboard, admin, contributor).
-
-# Puente-app
+If you want any of these, tell me which and I'll implement it.
