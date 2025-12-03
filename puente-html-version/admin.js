@@ -6,9 +6,8 @@
   try{
     if (window.location.port === '5500') API_BASE = 'http://localhost:3010';
     else if (window.location.protocol === 'file:') API_BASE = 'http://localhost:3001';
-    else if (window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') API_BASE = 'http://localhost:3001';
     else API_BASE = '';
-  }catch(e){ API_BASE = 'http://localhost:3001'; }
+  }catch(e){ API_BASE = ''; }
   if (DEBUG) console.debug('admin: API_BASE', API_BASE);
 
   function rb(id){ return document.getElementById(id); }

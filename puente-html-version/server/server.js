@@ -12,6 +12,23 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '8mb' }));
 app.use(bodyParser.urlencoded({ limit: '8mb', extended: true }));
 
+// Serve environment variables to the frontend (for Firebase/Gemini config)
+app.get('/env.js', (req, res) => {
+  res.set('Content-Type', 'application/javascript');
+  const env = {
+    __firebase_config: process.env.__firebase_config || '{}',
+    __initial_auth_token: process.env.__initial_auth_token || '',
+    __app_id: process.env.__app_id || '',
+    API_KEY: process.env.API_KEY || ''
+  };
+  res.send(`
+    window.__firebase_config = ${JSON.stringify(env.__firebase_config)};
+    window.__initial_auth_token = ${JSON.stringify(env.__initial_auth_token)};
+    window.__app_id = ${JSON.stringify(env.__app_id)};
+    window.API_KEY = ${JSON.stringify(env.API_KEY)};
+  `);
+});
+
 // Serve static front-end files from the parent directory (puente-html-version)
 const STATIC_ROOT = path.join(__dirname, '..');
 app.use('/', express.static(STATIC_ROOT));

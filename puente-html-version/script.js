@@ -17,7 +17,7 @@ if (loginForm){
         body: JSON.stringify({ email, password })
       });
   if (resp.ok){ const j = await resp.json(); const user = j.user || { email }; try{ sessionStorage.setItem('puente_user', JSON.stringify(user)); sessionStorage.setItem('puente_role', user.role || role); if (j.token) sessionStorage.setItem('puente_token', j.token); else if (user.token) sessionStorage.setItem('puente_token', user.token); }catch(e){}
-      const dest1 = (user.role || role) === 'admin' ? 'dashboard-admin.html' : (user.role || role) === 'vendor' ? 'dashboard-vendor.html' : (user.role || role) === 'moto' ? 'dashboard-moto.html' : (user.role || role) === 'contributor' ? 'contributor.html' : 'dashboard.html';
+      const dest1 = (user.role || role) === 'admin' ? 'admin.html' : (user.role || role) === 'vendor' ? 'dashboard-vendor.html' : (user.role || role) === 'moto' ? 'dashboard-moto.html' : (user.role || role) === 'contributor' ? 'dashboard-contributor.html' : 'student-dashboard.html';
       window.location.href = dest1; return; }
       // if not ok and status 401, offer to register
       if (resp.status === 401){
