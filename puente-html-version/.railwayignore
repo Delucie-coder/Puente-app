@@ -1,0 +1,26 @@
+# Dependencies - Railway will install these
+node_modules/
+server/node_modules/
+
+# Environment files
+.env
+server/.env
+
+# Logs
+*.log
+server/*.log
+
+# Temp files
+server/tmp/
+tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Uploads (keep structure but not files for deploy)
+# server/data/uploads/* - keeping for now as they're small

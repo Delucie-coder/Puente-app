@@ -1,0 +1,12 @@
+{
+  "name": "puente-app",
+  "version": "1.0.0",
+  "description": "Puente language learning platform",
+  "scripts": {
+    "start": "cd server && node server.js",
+    "postinstall": "cd server && npm install"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
