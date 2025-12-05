@@ -45,10 +45,13 @@
         <p class="muted" style="margin-bottom: 8px;">Quick Demo Access:</p>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button type="button" id="demoStudent" class="btn-demo" style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-            👨‍🎓 Demo as Student
+            👨‍🎓 Student
+          </button>
+          <button type="button" id="demoContributor" class="btn-demo" style="flex: 1; padding: 10px; background: #f59e0b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            📚 Contributor
           </button>
           <button type="button" id="demoAdmin" class="btn-demo" style="flex: 1; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-            👨‍💼 Demo as Admin
+            👨‍💼 Admin
           </button>
         </div>
       </div>
@@ -64,7 +67,16 @@
       document.getElementById('username').value = 'demo.student';
       document.getElementById('password').value = 'demo123';
       document.getElementById('role').value = 'student';
-      // Visual feedback
+      this.textContent = '✓ Loading...';
+      setTimeout(() => {
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      }, 500);
+    });
+    
+    document.getElementById('demoContributor').addEventListener('click', function() {
+      document.getElementById('username').value = 'demo.contributor';
+      document.getElementById('password').value = 'demo123';
+      document.getElementById('role').value = 'contributor';
       this.textContent = '✓ Loading...';
       setTimeout(() => {
         document.getElementById('loginForm').dispatchEvent(new Event('submit'));
@@ -75,7 +87,6 @@
       document.getElementById('username').value = 'admin@example.com';
       document.getElementById('password').value = 'adminpass';
       document.getElementById('role').value = 'admin';
-      // Visual feedback
       this.textContent = '✓ Loading...';
       setTimeout(() => {
         document.getElementById('loginForm').dispatchEvent(new Event('submit'));
