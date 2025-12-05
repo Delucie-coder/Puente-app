@@ -40,12 +40,48 @@
       </div>
 
       <button type="submit" class="btn-primary">Login</button>
-      <p class="muted">Demo: pick any role to explore the dashboards.</p>
+      
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <p class="muted" style="margin-bottom: 8px;">Quick Demo Access:</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" id="demoStudent" class="btn-demo" style="flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            👨‍🎓 Demo as Student
+          </button>
+          <button type="button" id="demoAdmin" class="btn-demo" style="flex: 1; padding: 10px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            👨‍💼 Demo as Admin
+          </button>
+        </div>
+      </div>
+      
+      <p class="muted" style="margin-top: 12px;">Or fill in credentials manually above.</p>
     </form>
   </div>
 
   <script src="script.js"></script>
   <script>
+    // Demo button handlers - auto-fill and submit
+    document.getElementById('demoStudent').addEventListener('click', function() {
+      document.getElementById('username').value = 'demo.student';
+      document.getElementById('password').value = 'demo123';
+      document.getElementById('role').value = 'student';
+      // Visual feedback
+      this.textContent = '✓ Loading...';
+      setTimeout(() => {
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      }, 500);
+    });
+    
+    document.getElementById('demoAdmin').addEventListener('click', function() {
+      document.getElementById('username').value = 'admin@example.com';
+      document.getElementById('password').value = 'adminpass';
+      document.getElementById('role').value = 'admin';
+      // Visual feedback
+      this.textContent = '✓ Loading...';
+      setTimeout(() => {
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      }, 500);
+    });
+
     // Simple demo login handler: store a minimal user object and redirect
     (function(){
       const form = document.getElementById('loginForm');
