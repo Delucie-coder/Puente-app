@@ -11,6 +11,7 @@ app.use(cors());
 // allow larger JSON bodies for image uploads (base64 data URLs)
 app.use(bodyParser.json({ limit: '8mb' }));
 app.use(bodyParser.urlencoded({ limit: '8mb', extended: true }));
+app.use(express.static('../public'));
 
 // Serve environment variables to the frontend (for Firebase/Gemini config)
 app.get('/env.js', (req, res) => {
