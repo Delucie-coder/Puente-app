@@ -24,7 +24,7 @@ if (loginForm){
         // attempt registration
         const reg = await fetch(`${API_BASE}/api/register`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ email, name: username || 'Guest', password, role }) });
   if (reg.ok){ const jr = await reg.json(); const user = jr.user; try{ sessionStorage.setItem('puente_user', JSON.stringify(user)); sessionStorage.setItem('puente_role', user.role || role); if (jr.token) sessionStorage.setItem('puente_token', jr.token); else if (user.token) sessionStorage.setItem('puente_token', user.token); }catch(e){}
-      const dest2 = (user.role || role) === 'admin' ? 'dashboard-admin.html' : (user.role || role) === 'vendor' ? 'dashboard-vendor.html' : (user.role || role) === 'moto' ? 'dashboard-moto.html' : (user.role || role) === 'contributor' ? 'contributor.html' : 'dashboard.html';
+      const dest2 = (user.role || role) === 'admin' ? 'admin.html' : (user.role || role) === 'vendor' ? 'dashboard-vendor.html' : (user.role || role) === 'moto' ? 'dashboard-moto.html' : (user.role || role) === 'contributor' ? 'dashboard-contributor.html' : 'student-dashboard.html';
       window.location.href = dest2; return; }
         if (reg.status === 409) { alert('User already exists with a password. Please retry login with correct password.'); return; }
       }
@@ -38,7 +38,7 @@ if (loginForm){
     try { localStorage.setItem('puente:user', JSON.stringify(user)); } catch(e){}
     try { sessionStorage.setItem('puente_user', JSON.stringify(user)); } catch(e){}
     try { sessionStorage.setItem('puente_role', role); } catch(e){}
-    const dest3 = role === 'admin' ? 'dashboard-admin.html' : role === 'vendor' ? 'dashboard-vendor.html' : role === 'moto' ? 'dashboard-moto.html' : role === 'contributor' ? 'contributor.html' : 'dashboard.html';
+    const dest3 = role === 'admin' ? 'admin.html' : role === 'vendor' ? 'dashboard-vendor.html' : role === 'moto' ? 'dashboard-moto.html' : role === 'contributor' ? 'dashboard-contributor.html' : 'student-dashboard.html';
     window.location.href = dest3;
   });
 }
